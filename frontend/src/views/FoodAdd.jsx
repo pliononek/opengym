@@ -1,0 +1,361 @@
+import { useEffect, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useFood } from '../store/useFood.js'
+import { useUI } from '../store/useUI.js'
+import { todayISO, fmtNum } from '../lib/format.js'
+import { t } from '../lib/i18n.js'
+import { addEntry } from '../lib/nutrition.js'
+import { hasKey, estimateFromText, estimateFromPhoto, imageToBase64 } from '../lib/nutrition-ai.js'
+import { searchFood, lookupBarcode, extractCodeFromQr, scalePer100 } from '../lib/nutrition-off.js'
+import Icon from '../components/Icon.jsx'
+import { Button, NumberField, TextField } from '../components/ui.jsx'
+
+// ───────────────────────── sheet helpers (modal, promise-based) ─────────────
+
+// Labelled number field for food forms — shows what each box is for.
+function Fld({ label, ...rest }) {
+  return <div>
+    <span className="f-lbl">{label}</span>
+    <NumberField {...rest} />
+  </div>
+}
+
+
+function GramsPicker({ name, per100, resolve, close }) {
+  const [g, setG] = useState(100)
+  const s = scalePer100(per100, g > 0 ? g : 0)
+  return <div style={{ textAlign: 'center' }}>
+    <h3>{name}</h3>
+    <p className="muted small" style={{ textAlign: 'center', marginBottom: 14 }}>
+      {t('Per 100 g:')} {fmtNum(per100.kcal)} {t('kcal')} · {t('P')} {fmtNum(per100.p)} · {t('C')} {fmtNum(per100.c)} · {t('F')} {fmtNum(per100.f)}
+    </p>
+    <div className="row" style={{ gap: 8 }}>
+      <span className="stp-l" style={{ flex: 'none' }}>g</span>
+      <NumberField value={g} onChange={setG} style={{ flex: 1 }} />
+    </div>
+    <div className="row between" style={{ margin: '10px 0 14px' }}>
+      <span className="muted small">{name}</span>
+      <b className="accent" style={{ fontSize: 18 }}>{fmtNum(s.kcal)} {t('kcal')}</b>
+    </div>
+    <Button variant="primary" onClick={() => { close(); resolve(g > 0 ? g : null) }}>{t('Add')}</Button>
+    <div style={{ height: 8 }} /><Button variant="ghost" className="dim" onClick={() => { close(); resolve(null) }}>{t('Cancel')}</Button>
+  </div>
+}
+
+const gramsSheet = async ({ name, per100, code }) => {
+  const ui = useUI.getState()
+  const g = await new Promise(resolve => {
+    ui.openSheet(close => <GramsPicker name={name} per100={per100} resolve={resolve} close={close} />)
+  })
+  if (!g) return null
+  const scaled = scalePer100(per100, g)
+  return { name, g, ...scaled, per100, code, source: 'off' }
+}
+
+function EstimateConfirm({ draft, model, resolve, close }) {
+  const [e, setE] = useState(draft)
+  const set = patch => setE(x => ({ ...x, ...patch }))
+  return <>
+    <h3>{t('Estimated')}{model ? <span className="dim" style={{ fontSize: 12, marginLeft: 8 }}>{model}</span> : null}</h3>
+    <div className="muted small" style={{ marginBottom: 12 }}>{t('Check the numbers — you can correct anything before saving.')}</div>
+    <TextField placeholder={t('Name')} value={e.name} onChange={ev => set({ name: ev.target.value })} />
+    <div className="f-editgrid" style={{ marginTop: 10 }}>
+      <Fld label={t('Weight (g)')} value={e.g} onChange={v => set({ g: v })} />
+      <Fld label={t('Calories (kcal)')} value={e.kcal} onChange={v => set({ kcal: v })} />
+      <Fld label={t('Protein (g)')} value={e.p} onChange={v => set({ p: v })} />
+      <Fld label={t('Carbs (g)')} value={e.c} onChange={v => set({ c: v })} />
+      <Fld label={t('Fat (g)')} value={e.f} onChange={v => set({ f: v })} />
+    </div>
+    <div style={{ height: 14 }} />
+    <Button variant="primary" onClick={() => { close(); resolve(e) }}>{t('Add')}</Button>
+    <div style={{ height: 8 }} /><Button variant="ghost" className="dim" onClick={() => { close(); resolve(null) }}>{t('Cancel')}</Button>
+  </>
+}
+
+const confirmEstimateSheet = async (draft, { model } = {}) => {
+  const ui = useUI.getState()
+  return await new Promise(resolve => {
+    ui.openSheet(close => <EstimateConfirm draft={draft} model={model} resolve={resolve} close={close} />)
+  })
+}
+
+// ───────────────────────────────── the page ─────────────────────────────────
+
+const MODES = [
+  { k: 'text', icon: 'pencil', title: () => t('Describe it'), sub: () => t('Type what you ate — AI estimates the macros') },
+  { k: 'photo', icon: 'magnifier', title: () => t('Take a photo'), sub: () => t('Snap the plate — AI reads it and estimates a portion') },
+  { k: 'barcode', icon: 'scale', title: () => t('Bar code / QR'), sub: () => t('Scan a product — exact data from Open Food Facts') },
+  { k: 'manual', icon: 'plus', title: () => t('Enter by hand'), sub: () => t('No AI — type the numbers you know') }
+]
+
+const requireKey = toast => {
+  toast(t('Add your Gemini key in Settings to use AI'))
+  return false
+}
+
+export default function FoodAdd() {
+  const nav = useNavigate()
+  const toast = useUI(s => s.toast)
+  const [mode, setMode] = useState(null)
+
+  const saveEntry = (entry) => {
+    useFood.getState().update(f => addEntry(f, todayISO(), entry))
+    toast(t('Added'))
+    nav('/food')
+  }
+
+  return <div className="narrow fadd">
+    <div className="hdr">
+      <button className="iconbtn" onClick={() => nav('/food')} aria-label={t('Back')}><Icon name="chevronLeft" /></button>
+      <div style={{ flex: 1, marginLeft: 10 }}><h1>{t('Add food')}</h1></div>
+    </div>
+
+    {mode === null ? <div className="add-modes">
+      {MODES.map(m => (
+        <button key={m.k} className="add-mode" onClick={() => setMode(m.k)}>
+          <span className="am-ic"><Icon name={m.icon} /></span>
+          <span className="am-t">{m.title()}</span>
+          <span className="am-s">{m.sub()}</span>
+        </button>
+      ))}
+    </div> : mode === 'text' ? <TextMode toast={toast} onSave={saveEntry} onBack={() => setMode(null)} />
+    : mode === 'photo' ? <PhotoMode toast={toast} onSave={saveEntry} onBack={() => setMode(null)} />
+    : mode === 'barcode' ? <BarcodeMode toast={toast} onSave={saveEntry} onBack={() => setMode(null)} />
+    : <ManualMode toast={toast} onSave={saveEntry} onBack={() => setMode(null)} />}
+  </div>
+}
+
+/* ─────────────────────────────── text mode ─────────────────────────────── */
+
+function TextMode({ toast, onSave, onBack }) {
+  const [desc, setDesc] = useState('')
+  const [grams, setGrams] = useState(0)
+  const [busy, setBusy] = useState(false)
+  const [cands, setCands] = useState([])
+
+  const ql = desc.trim()
+  useEffect(() => {
+    if (ql.length < 3) { setCands([]); return }
+    const to = setTimeout(() => { searchFood(ql).then(setCands).catch(() => setCands([])) }, 500)
+    return () => clearTimeout(to)
+  }, [ql])
+
+  const ai = async () => {
+    if (!ql) { toast(t('Describe the food first')); return }
+    if (!hasKey()) { requireKey(toast); return }
+    setBusy(true)
+    try {
+      const draft = await estimateFromText(ql, { grams, cands })
+      const entry = await confirmEstimateSheet(draft)
+      if (entry) onSave(entry)
+    } catch (e) {
+      toast(e.message || t('AI estimate failed'))
+    }
+    setBusy(false)
+  }
+
+  const pick = async c => {
+    const entry = await gramsSheet({ name: c.name, per100: c.per100, code: c.code })
+    if (entry) onSave(entry)
+  }
+
+  return <>
+    <div className="card">
+      <div className="sect-t" style={{ padding: '0 2px 7px' }}>{t('Describe what you ate')}</div>
+      <textarea className="field area" rows={3} placeholder={t('e.g. 2 eggs fried in butter + rye toast + coffee')} value={desc} maxLength={200}
+        onChange={e => setDesc(e.target.value)} />
+      <div className="row" style={{ gap: 8, marginTop: 10 }}>
+        <span className="stp-l" style={{ flex: 'none' }}>{t('grams (optional)')}</span>
+        <NumberField value={grams} onChange={setGrams} style={{ flex: 1 }} />
+      </div>
+      <div className="row" style={{ gap: 6, marginTop: 10 }}>
+        {!hasKey() && <span className="tag" style={{ opacity: 1 }}><Icon name="lock" style={{ fontSize: 12 }} />{t('AI needs a Gemini key — Settings')}</span>}
+      </div>
+      <div style={{ height: 10 }} />
+      <Button variant="primary" icon="sparkles" disabled={busy} onClick={ai}>
+        {busy ? t('Estimating…') : t('AI estimate')}
+      </Button>
+    </div>
+
+    {cands.length > 0 && <div className="card">
+      <div style={{ fontSize: 12, color: 'var(--label-3)', textTransform: 'uppercase', letterSpacing: '.5px', fontWeight: 600, marginBottom: 4 }}>
+        {t('Open Food Facts matches')}
+      </div>
+      <div className="f-off">
+        {cands.map(c => (
+          <button key={c.code} className="item" style={{ textAlign: 'left', width: '100%' }} onClick={() => pick(c)}>
+            <span className="lrow-i" style={{ background: 'var(--acc-soft)', color: 'var(--acc)' }}><Icon name="apple" /></span>
+            <div className="grow"><div className="tt">{c.name}</div>
+              <div className="ss">{fmtNum(c.per100.kcal)} kcal / 100 g · P {fmtNum(c.per100.p)} · C {fmtNum(c.per100.c)} · F {fmtNum(c.per100.f)}</div></div>
+            <Icon name="plus" className="chev" />
+          </button>
+        ))}
+      </div>
+    </div>}
+
+    <div style={{ height: 4 }} />
+    <Button variant="ghost" className="dim" onClick={onBack}>{t('Choose a different way')}</Button>
+  </>
+}
+
+/* ────────────────────────────── photo mode ────────────────────────────── */
+
+function PhotoMode({ toast, onSave, onBack }) {
+  const inputRef = useRef(null)
+  const [dataUrl, setDataUrl] = useState(null)
+  const [hint, setHint] = useState('')
+  const [grams, setGrams] = useState(0)
+  const [busy, setBusy] = useState(false)
+
+  const onPick = ev => {
+    const f = ev.target.files?.[0]
+    if (!f) return
+    imageToBase64(f).then(setDataUrl).catch(() => toast(t('Could not read that image')))
+    ev.target.value = ''
+  }
+
+  const ai = async () => {
+    if (!dataUrl) { toast(t('Take a photo first')); return }
+    if (!hasKey()) { requireKey(toast); return }
+    setBusy(true)
+    try {
+      const { draft, model } = await estimateFromPhoto(dataUrl, { grams, nameHint: hint })
+      const entry = await confirmEstimateSheet(draft, { model })
+      if (entry) onSave(entry)
+    } catch (e) {
+      toast(e.message || t('AI estimate failed'))
+    }
+    setBusy(false)
+  }
+
+  return <>
+    <div className="card">
+      <input ref={inputRef} type="file" accept="image/*" capture="environment" style={{ display: 'none' }} onChange={onPick} />
+      {dataUrl && <img className="fphoto-preview" src={dataUrl} alt="" />}
+      <div className="row" style={{ gap: 8, marginBottom: 10 }}>
+        <TextField placeholder={t('What is it? (optional hint)')} value={hint} onChange={e => setHint(e.target.value)} />
+        <NumberField value={grams} onChange={setGrams} placeholder="g" />
+      </div>
+      <Button variant={dataUrl ? 'plain' : 'primary'} icon="magnifier" onClick={() => inputRef.current?.click()}>
+        {dataUrl ? t('Pick a different photo') : t('Take a photo')}
+      </Button>
+      <div style={{ height: 8 }} />
+      <Button variant="primary" icon="sparkles" disabled={!dataUrl || busy} onClick={ai}>
+        {busy ? t('Looking at your plate…') : t('AI estimate')}
+      </Button>
+      {!hasKey() && <div className="small dim" style={{ marginTop: 8 }}>{t('AI needs a Gemini key set in Settings.')}</div>}
+    </div>
+    <Button variant="ghost" className="dim" onClick={onBack}>{t('Choose a different way')}</Button>
+  </>
+}
+
+/* ───────────────────────────── barcode mode ───────────────────────────── */
+
+function BarcodeMode({ toast, onSave, onBack }) {
+  const videoRef = useRef(null)
+  const [manual, setManual] = useState('')
+  const [busy, setBusy] = useState(false)
+  const readerRef = useRef(null)
+
+  const run = async code => {
+    setBusy(true)
+    try {
+      const p = await lookupBarcode(code)
+      if (!p) { toast(t('No nutrition data for this product')); setBusy(false); return }
+      const entry = await gramsSheet({ name: p.name, per100: p.per100, code: p.code })
+      if (entry) onSave(entry); else setBusy(false)
+    } catch (e) { toast(e.message || t('Could not reach Open Food Facts')); setBusy(false) }
+  }
+
+  useEffect(() => {
+    const video = videoRef.current
+    if (!video) return
+    let active = true
+    const load = async () => {
+      try {
+        const { BrowserMultiFormatReader } = await import('@zxing/browser')
+        if (!active) return
+        const reader = new BrowserMultiFormatReader()
+        readerRef.current = reader
+        let controls = null
+        await reader.decodeFromConstraints(
+          { video: { facingMode: { ideal: 'environment' } } },
+          video,
+          (result) => {
+            if (!result || !active) return
+            const code = extractCodeFromQr(result.getText())
+            if (!code) return
+            active = false
+            try { controls && controls.stop() } catch { /* already stopped */ }
+            try { reader.reset() } catch { /* */ }
+            run(code)
+          }
+        ).then(c => { controls = c })
+      } catch (e) {
+        if (active) toast(t('Camera unavailable — you can still type the code below.'))
+      }
+    }
+    load()
+    return () => {
+      active = false
+      if (readerRef.current) { try { readerRef.current.reset() } catch { /* */ } readerRef.current = null }
+    }
+  }, [])
+
+  const submitManual = () => {
+    const code = manual.replace(/\D/g, '').slice(0, 14)
+    if (code.length < 8) { toast(t('Enter a barcode (8–14 digits)')); return }
+    run(code)
+  }
+
+  return <>
+    <div className="card">
+      <div className="fscanner">
+        <video ref={videoRef} playsInline style={{ width: '100%', height: '100%' }} />
+        <div className="fscan-frame" />
+        <div className="fscan-line" />
+      </div>
+      <div className="muted small" style={{ marginTop: 10 }}>{t('Point the camera at a barcode or QR.')}</div>
+      <div style={{ height: 8 }} />
+      <div className="sect-t" style={{ padding: '0 2px 7px' }}>{t('Or enter the code')}</div>
+      <TextField placeholder={t('e.g. 5901234567890')} inputMode="numeric" value={manual} onChange={e => setManual(e.target.value)} />
+      <div style={{ height: 10 }} />
+      <Button variant="primary" disabled={busy} onClick={submitManual}>{t('Check code')}</Button>
+      {busy && <div className="small dim" style={{ marginTop: 8 }}>{t('Looking it up…')}</div>}
+    </div>
+    <Button variant="ghost" className="dim" onClick={onBack}>{t('Choose a different way')}</Button>
+  </>
+}
+
+/* ────────────────────────────── manual mode ────────────────────────────── */
+
+function ManualMode({ toast, onSave, onBack }) {
+  const [name, setName] = useState('')
+  const [g, setG] = useState(100)
+  const [kcal, setKcal] = useState(0)
+  const [p, setP] = useState(0)
+  const [c, setC] = useState(0)
+  const [f, setF] = useState(0)
+
+  const save = () => {
+    if (!name.trim()) { toast(t('Give it a name')); return }
+    if (!kcal && !p && !c && !f) { toast(t('Fill in calories or at least one macro')); return }
+    onSave({ name: name.trim(), g: Math.round(g), kcal: Math.round(kcal), p: Math.round(p), c: Math.round(c), f: Math.round(f), source: 'manual' })
+  }
+
+  return <>
+    <div className="card">
+      <TextField placeholder={t('Name — e.g. Chicken & rice bowl')} value={name} maxLength={120} onChange={e => setName(e.target.value)} />
+      <div className="f-editgrid" style={{ marginTop: 12 }}>
+        <Fld label={t('Weight (g)')} value={g} onChange={setG} />
+        <Fld label={t('Calories (kcal)')} value={kcal} onChange={setKcal} />
+        <Fld label={t('Protein (g)')} value={p} onChange={setP} />
+        <Fld label={t('Carbs (g)')} value={c} onChange={setC} />
+        <Fld label={t('Fat (g)')} value={f} onChange={setF} />
+      </div>
+      <div style={{ height: 14 }} />
+      <Button variant="primary" onClick={save}>{t('Add to diary')}</Button>
+    </div>
+    <Button variant="ghost" className="dim" onClick={onBack}>{t('Choose a different way')}</Button>
+  </>
+}

@@ -1,8 +1,11 @@
 // Web Push subscribe/unsubscribe — requires a signed-in profile (subscriptions are stored
 // server-side per user, same as everything else under /api).
 import { api } from './api.js'
+import { SUPA } from './supabase-meta.js'
 
-export const pushSupported = () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window
+// On a Supabase (static) build there is no server to route a push through — the Settings
+// section degrades to "not supported", exactly as it does in an HTTPS-less network.
+export const pushSupported = () => !SUPA && 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window
 export const pushPermission = () => (pushSupported() ? Notification.permission : 'unsupported')
 
 const urlBase64ToUint8Array = b64 => {

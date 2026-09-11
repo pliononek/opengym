@@ -1,12 +1,13 @@
 import { useStore } from '../store/useStore.js'
 import { useUI } from '../store/useUI.js'
-import { webauthnOK, passkeyLogin, passkeyRegister, api, BIO } from '../lib/api.js'
+import { webauthnOK, passkeyLogin, passkeyRegister, api, BIO, emailSignIn, emailSignUp } from '../lib/api.js'
 import { hasData } from '../store/useStore.js'
+import { SUPA } from '../lib/supabase-meta.js'
 import { t } from '../lib/i18n.js'
 import { DEMO, REPO } from '../lib/demo.js'
 import { useState, useRef, useEffect } from 'react'
 import Icon from '../components/Icon.jsx'
-import { Button } from '../components/ui.jsx'
+import { Button, TextField } from '../components/ui.jsx'
 
 function RegisterSheet({ close }) {
   const { setUser, pushState, pullState } = useStore()
@@ -42,6 +43,46 @@ function RegisterSheet({ close }) {
   </>
 }
 
+/* Supabase build: sign up with name + email + password. */
+export function SupaRegisterSheet({ close }) {
+  const { setUser, pushState, pullState } = useStore()
+  const nameRef = useRef(null)
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [busy, setBusy] = useState(false)
+  useEffect(() => { setTimeout(() => nameRef.current?.focus(), 250) }, [])
+  const go = async () => {
+    const n = name.trim()
+    if (!n) { useUI.getState().toast(t('Enter a name')); return }
+    if (!/.+@.+\..+/.test(email.trim())) { useUI.getState().toast(t('Enter a valid email')); return }
+    if (password.length < 8) { useUI.getState().toast(t('Password must be at least 8 characters')); return }
+    if (busy) return
+    setBusy(true)
+    try {
+      const res = await emailSignUp(n, email, password)
+      if (res.needsConfirm) { close(); useUI.getState().toast(t('Check your email to confirm the account')) }
+      else {
+        setUser(res.user); close()
+        if (hasData(useStore.getState().S)) { await pushState(); useUI.getState().toast(t('Profile created — data from this device moved into it')) }
+        else { await pullState(); useUI.getState().toast(t('Welcome, {0}', res.user.name)) }
+      }
+    } catch (e) { useUI.getState().toast(e.message || t('Registration failed')) }
+    setBusy(false)
+  }
+  return <>
+    <h3>{t('Create your profile')}</h3>
+    <div className="muted small" style={{ marginBottom: 14 }}>{t('An email and password keep your data synced between devices.')}</div>
+    <input ref={nameRef} className="input" placeholder={t('Your name')} maxLength={40} value={name} onChange={e => setName(e.target.value)} />
+    <div style={{ height: 10 }} />
+    <input className="input" type="email" inputMode="email" placeholder={t('Email')} value={email} onChange={e => setEmail(e.target.value)} />
+    <div style={{ height: 10 }} />
+    <input className="input" type="password" placeholder={t('Password')} value={password} onChange={e => setPassword(e.target.value)} />
+    <div style={{ height: 12 }} />
+    <Button variant="primary" disabled={busy} onClick={go}>{busy ? t('Creating…') : t('Create profile')}</Button>
+  </>
+}
+
 export default function Login() {
   const { setUser, pullState, setGuest } = useStore()
   const signIn = async () => {
@@ -69,6 +110,19 @@ export default function Login() {
     </div>
   )
 
+  // Supabase build: email + password instead of WebAuthn.
+  if (SUPA) return (
+    <div className="narrow" style={wrap}>
+      {head}
+      <div className="muted" style={{ marginBottom: 34 }}>{t('Your workouts. Your weights. Your profile. Your data, synced.')}</div>
+      <EmailLogin setUser={setUser} pullState={pullState} />
+      <Button icon="sparkles" onClick={() => useUI.getState().openSheet(close => <SupaRegisterSheet close={close} />)}>{t('Create new profile')}</Button>
+      <div style={{ height: 10 }} />
+      <Button variant="ghost" className="dim" onClick={() => setGuest(true)}>{t('Continue without account')}</Button>
+      <div className="dim small" style={{ marginTop: 26, lineHeight: 1.5 }}>{t('Your data syncs between every device you sign in on.')}</div>
+    </div>
+  )
+
   return (
     <div className="narrow" style={wrap}>
       {head}
@@ -82,5 +136,32 @@ export default function Login() {
       <Button variant="ghost" className="dim" onClick={() => setGuest(true)}>{t('Continue without account')}</Button>
       <div className="dim small" style={{ marginTop: 26, lineHeight: 1.5 }}>{t('Passkeys use {0} — no passwords.', BIO)}<br />{t('Each profile keeps its own plan, workouts & body weight.')}</div>
     </div>
+  )
+}
+
+function EmailLogin({ setUser, pullState }) {
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [busy, setBusy] = useState(false)
+  const go = async ev => {
+    ev.preventDefault()
+    if (busy) return
+    if (!email.trim() || !password) { useUI.getState().toast(t('Enter your email and password')); return }
+    setBusy(true)
+    try {
+      const u = await emailSignIn(email, password)
+      setUser(u); await pullState()
+      useUI.getState().toast(t('Welcome back, {0}', u.name))
+    } catch (e) { useUI.getState().toast(e.message || t('Sign-in failed')) }
+    setBusy(false)
+  }
+  return (
+    <form onSubmit={go} style={{ maxWidth: 300, margin: '0 auto' }} className="card">
+      <input className="input" type="email" inputMode="email" placeholder={t('Email')} autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} />
+      <div style={{ height: 10 }} />
+      <input className="input" type="password" placeholder={t('Password')} autoComplete="current-password" value={password} onChange={e => setPassword(e.target.value)} />
+      <div style={{ height: 12 }} />
+      <Button variant="primary" type="submit" disabled={busy}>{busy ? t('Signing in…') : t('Sign in')}</Button>
+    </form>
   )
 }

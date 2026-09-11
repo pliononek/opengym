@@ -13,8 +13,13 @@ import { MOBILE, shareExport, syncReminder } from '../lib/mobile.js'
 import { loadStarterPlan, confirmSheet, importFromApp } from '../sheets.jsx'
 import { coachAvailable, hasConsent } from '../lib/coach.js'
 import { forgetCoach } from '../lib/coach-api.js'
+import { goalsOf, clampGoals } from '../lib/nutrition.js'
+import { useFood } from '../store/useFood.js'
+import { getGeminiKey, setGeminiKey, getModel, setModel, MODEL_CHAIN, hasKey } from '../lib/nutrition-ai.js'
+import { SUPA } from '../lib/supabase-meta.js'
 import Icon from '../components/Icon.jsx'
-import { Section, Row, SelectRow, Switch, Segmented, Button, TextField } from '../components/ui.jsx'
+import { Section, Row, SelectRow, Switch, Segmented, Button, TextField, NumberField } from '../components/ui.jsx'
+import { SupaRegisterSheet } from './Login.jsx'
 
 export default function Settings() {
   const nav = useNavigate()
@@ -76,7 +81,7 @@ export default function Settings() {
     </div>
 
     {/* ---------- account (demo and mobile builds have nothing to sign in to) ---------- */}
-    <Section title={MOBILE ? t('Your data') : DEMO ? t('Demo') : t('Account')}>
+    <Section title={MOBILE ? t('Your data') : DEMO ? t('Demo') : SUPA ? t('Account') : t('Account')}>
       {MOBILE ? <>
         <Row icon="lock" iconTint="var(--acc)" title={t('All data stays on this phone')} subtitle={t('No account, no cloud — back it up anytime with Export below.')} />
         <Row icon="rocket" iconTint="var(--indigo)" title={t('Self-host openGym')} subtitle={t('Passkey sign-in, sync across your devices, your own data.')} accessory="chevron"
@@ -87,6 +92,15 @@ export default function Settings() {
           onClick={() => confirmSheet({ title: t('Reset demo data?'), message: t('Puts the example plan, workouts and weigh-ins back the way they started.'), confirmText: t('Reset'), onConfirm: () => { resetDemo(); nav('/home'); toast(t('Demo data reset')) } })} />
         <Row icon="rocket" iconTint="var(--indigo)" title={t('Self-host openGym')} subtitle={t('Passkey sign-in, sync across your devices, your own data.')} accessory="chevron"
           onClick={() => window.open(REPO, '_blank', 'noopener')} />
+      </> : SUPA && user ? <>
+        <Row icon="personCircle" iconTint="var(--grey)" title={user.name} subtitle={user.email ? user.email : t('Signed in — data syncs to this profile.')} />
+        <Row icon="signOut" iconTint="var(--red)" title={t('Sign out')} danger onClick={() => confirmSheet({ title: t('Sign out?'), message: t('Your data is synced to your profile first, then cleared from this device.'), confirmText: t('Sign out'), danger: true, onConfirm: () => { signOut(); nav('/home') } })} />
+        <Row icon="shield" iconTint="var(--red)" title={t('Sign out everywhere')} subtitle={t('Ends this profile’s sessions on all your devices.')} danger onClick={signOutEverywhere} />
+      </> : SUPA && !user ? <>
+        <Row icon="sparkles" iconTint="var(--acc)" title={t('Create profile')} subtitle={t('Email + password — your data syncs between devices.')} accessory="chevron"
+          onClick={() => useUI.getState().openSheet(close => <SupaRegisterSheet close={close} />)} />
+        <Row icon="person" iconTint="var(--blue)" title={t('Sign in')} accessory="chevron"
+          onClick={() => useUI.getState().openSheet(close => <SupaLoginSheet close={close} />)} />
       </> : user ? <>
         <Row icon="personCircle" iconTint="var(--grey)" title={user.name} subtitle={t('Signed in with passkey — data syncs to this profile.')} />
         {user.admin && <Row icon="wrench" iconTint="var(--indigo)" title={t('Admin dashboard')} accessory="chevron" onClick={() => nav('/admin')} />}
@@ -152,6 +166,8 @@ export default function Settings() {
           accessory="chevron" onClick={() => nav('/coach')} />
       </Section>
     )}
+
+    <NutritionCard toast={toast} />
 
     {(user || MOBILE) && <NotificationsCard S={S} update={update} toast={toast} />}
 
@@ -359,4 +375,95 @@ function RegisterInline({ close, setUser, pushState, pullState, toast }) {
     <TextField ref={nameRef} placeholder={t('Your name')} maxLength={40} />
     <div style={{ height: 12 }} /><Button variant="primary" onClick={go}>{t('Create passkey')}</Button>
   </>
+}
+
+/* ============================ supabase login sheet ============================ */
+
+function SupaLoginSheet({ close }) {
+  const { setUser, pullState } = useStore()
+  const toast = useUI(s => s.toast)
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [busy, setBusy] = useState(false)
+  const go = async () => {
+    if (busy) return
+    if (!email.trim() || !password) { toast(t('Enter your email and password')); return }
+    setBusy(true)
+    try {
+      const { emailSignIn } = await import('../lib/api.js')
+      const u = await emailSignIn(email, password)
+      setUser(u); await pullState(); close()
+      toast(t('Welcome back, {0}', u.name))
+    } catch (e) { toast(e.message || t('Sign-in failed')) }
+    setBusy(false)
+  }
+  return <>
+    <h3>{t('Sign in')}</h3>
+    <div className="muted small" style={{ marginBottom: 14 }}>{t('Your data syncs between every device you sign in on.')}</div>
+    <input className="input" type="email" inputMode="email" placeholder={t('Email')} autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} />
+    <div style={{ height: 10 }} />
+    <input className="input" type="password" placeholder={t('Password')} autoComplete="current-password" value={password} onChange={e => setPassword(e.target.value)} />
+    <div style={{ height: 12 }} />
+    <Button variant="primary" disabled={busy} onClick={go}>{busy ? t('Signing in…') : t('Sign in')}</Button>
+  </>
+}
+
+/* ============================ nutrition (goals + key, local-only) ============================ */
+
+// Goals and the food diary live only in this browser (store/useFood.js) — never in the
+// synced profile, never on Supabase. Fields are a labelled list, not a bare grid.
+function NutritionCard({ toast }) {
+  const food = useFood(s => s.food)
+  const { update, clear } = useFood()
+  const goals = goalsOf(food) || { kcal: 0, p: 0, c: 0, f: 0 }
+  const setGoal = (k, v) => update(f => { f.goals = clampGoals({ ...(f.goals || {}), [k]: v }) })
+
+  const GOALS = [
+    ['kcal', t('Calories'), t('Daily energy target — shown on the ring.')],
+    ['p', t('Protein'), t('Daily protein target in grams.')],
+    ['c', t('Carbs'), t('Daily carbohydrate target in grams.')],
+    ['f', t('Fat'), t('Daily fat target in grams.')],
+  ]
+
+  return (
+    <Section title={t('Nutrition')} footer={t('Goals and the food diary live only on this device — they are not synced.')}>
+      {GOALS.map(([k, label, sub]) => (
+        <Row key={k} icon={k === 'kcal' ? 'flame' : k === 'p' ? 'dumbbell' : k === 'c' ? 'layer' : 'drop'}
+          iconTint="var(--acc)" title={label} subtitle={sub}>
+          <div className="row" style={{ gap: 6 }}>
+            <NumberField value={goals[k]} onChange={v => setGoal(k, v)} className="f-num mini" />
+            <span className="stp-l" style={{ flex: 'none' }}>{k === 'kcal' ? 'kcal' : 'g'}</span>
+          </div>
+        </Row>
+      ))}
+      <Row icon="key" iconTint="var(--indigo)" title={t('Gemini API key')}
+        subtitle={getGeminiKey() ? t('Stored in this browser only.') : t('For AI food estimates (text & photo).')}>
+        <TextField className="inrow" type="password" placeholder={t('key')} defaultValue={getGeminiKey()}
+          onBlur={e => { setGeminiKey(e.target.value.trim()); if (e.target.value.trim()) toast(t('Gemini key saved')) }} />
+      </Row>
+      <Row icon="sparkles" iconTint="var(--acc)" title={t('AI model')} value={getModel() || MODEL_CHAIN[0]} accessory="chevron" onClick={() => {
+        const { openSheet } = useUI.getState()
+        openSheet(close => (
+          <>
+            <h3>{t('AI model')}</h3>
+            <div className="sect-b">
+              {MODEL_CHAIN.map(m => (
+                <button key={m} className="lrow tap" onClick={() => { setModel(m); close(); toast(t('Model saved')) }}>
+                  <span className="lrow-t">{m}</span>
+                  {(getModel() || MODEL_CHAIN[0]) === m && <Icon name="check" className="lrow-k" />}
+                </button>
+              ))}
+            </div>
+            <div style={{ height: 8 }} />
+          </>
+        ))
+      }} />
+      <Row icon="trash" iconTint="var(--red)" title={t('Clear food diary')} danger onClick={() => confirmSheet({
+        title: t('Clear food diary?'),
+        message: t('Removes the daily targets and every logged meal stored on this device.'),
+        confirmText: t('Clear'), danger: true,
+        onConfirm: () => { clear(); toast(t('Food diary cleared')) }
+      })} />
+    </Section>
+  )
 }

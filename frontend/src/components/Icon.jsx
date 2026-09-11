@@ -45,6 +45,9 @@ const P = {
   rocket: <><path d="M12 3.6c2.8 2.5 4.2 5.7 4.2 9.1v4.5H7.8v-4.5c0-3.4 1.4-6.6 4.2-9.1Z" /><circle cx="12" cy="10.3" r="1.8" /><path d="M7.8 14 5.2 16.6v3.8l2.6-2M16.2 14l2.6 2.6v3.8l-2.6-2" /></>,
   sparkles: <><path d="m8.4 3.8 1.1 2.9 2.9 1.1-2.9 1.1-1.1 2.9-1.1-2.9L4.4 7.8l2.9-1.1Z" /><path d="m16.2 12.4.8 2.1 2.1.8-2.1.8-.8 2.1-.8-2.1-2.1-.8 2.1-.8Z" /></>,
   lightbulb: <><path d="M9.2 16.4a5.6 5.6 0 1 1 5.6 0v1.8H9.2Z" /><path d="M10 20.6h4" /></>,
+  // An apple, drawn as one stroke with a top notch between the shoulders and a small
+  // twig — it must hold up at tab-bar size (25 px) where the notch reads as the leaf.
+  apple: <><path d="M12 8.4c-2-2.5-4-3.5-5.9-3.5-2.1 0-3.6 2-3.6 4.5 0 3.7 2.3 9.2 4.9 9.2 1 0 1.7-.5 2.6-.5s1.6.5 2.6.5c2.6 0 4.9-5.5 4.9-9.2 0-2.5-1.5-4.5-3.6-4.5-1.9 0-3.9 1-5.9 3.5Z" /><path d="M14.6 5.5c.3-1.5 1.1-2.4 2.5-2.9" /></>,
 
   /* ---- routine glyphs: what a training day actually is ---- */
   // Named after the split or the kit, because that's how people name routines

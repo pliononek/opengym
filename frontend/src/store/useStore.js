@@ -4,6 +4,7 @@ import { localTZ } from '../lib/format.js'
 import { registerCustom } from '../lib/exercises.js'
 import { DEMO, DEMO_SEEDED } from '../lib/demo.js'
 import { MOBILE, nativeLoad, nativeSave, syncReminder } from '../lib/mobile.js'
+import { SUPA } from '../lib/supabase-meta.js'
 
 const KEY = 'gym_state_v1'
 export const DEF = {
@@ -20,6 +21,8 @@ export const DEF = {
   // same app it was before the feature existed, which is what Epic F asks for. Shape and
   // bounds live in lib/coach.js.
   coach: null
+  // (Food & macros moved to a per-device localStorage store — see store/useFood.js —
+  // so goals and the food diary never sync to a server or leave the device.)
 }
 const clone = o => JSON.parse(JSON.stringify(o))
 
@@ -130,7 +133,7 @@ export const useStore = create((set, get) => {
     },
 
     async signOut() {
-      try { await get().pushState(); await api('/api/logout', { method: 'POST', body: '{}' }) } catch (e) { /* */ }
+      try { await get().pushState(); if (SUPA) { const { supaSignOut } = await import('../lib/supabase.js'); await supaSignOut('local') } else await api('/api/logout', { method: 'POST', body: '{}' }) } catch (e) { /* */ }
       clearLocalSession()
     },
 
@@ -141,7 +144,8 @@ export const useStore = create((set, get) => {
     // would sign the user out of the one place the bump didn't reach. Caller reports the error.
     async signOutAll() {
       await get().pushState()   // never throws — stores gym_dirty and moves on when offline
-      await api('/api/logout/all', { method: 'POST', body: '{}' })
+      if (SUPA) { const { supaSignOut } = await import('../lib/supabase.js'); await supaSignOut('global') }
+      else await api('/api/logout/all', { method: 'POST', body: '{}' })
       clearLocalSession()
     },
 
@@ -183,6 +187,8 @@ export const useStore = create((set, get) => {
       // Instance capabilities are public and needed whether or not anyone is signed in.
       try { set({ config: await api('/api/config') }) } catch (e) { /* offline — assume nothing extra */ }
       try {
+        // On Supabase builds the REST /api/me is not a passkey check — it just resumes the
+        // JWT session (see api.js). Same merge logic downstream either way.
         const me = await api('/api/me')
         get().setUser(me.user)
         await get().pullState()

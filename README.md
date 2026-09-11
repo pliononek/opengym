@@ -7,8 +7,10 @@
 **A self-hosted gym & body-weight tracker you actually own.**
 
 Plan your week, run guided workouts, track every set and your body weight over time —
-on your phone, synced across devices, behind your own passkey login.
-No account on someone else's server, no subscription, no ads. Just `docker compose up`.
+on your phone, synced across devices, behind your own login.
+Track your food and macros too — by text, photo or barcode, with AI estimating the numbers.
+Self-host it with Docker, or run it free on Cloudflare Pages + Supabase.
+No account on someone else's server, no subscription, no ads.
 
 <br>
 
@@ -17,26 +19,34 @@ No account on someone else's server, no subscription, no ads. Just `docker compo
 ![PWA](https://img.shields.io/badge/PWA-installable-a78bfa?style=flat-square)
 ![React](https://img.shields.io/badge/React-19-38bdf8?style=flat-square&logo=react&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-compose-2496ED?style=flat-square&logo=docker&logoColor=white)
+![Supabase](https://img.shields.io/badge/Supabase-ready-3ECF8E?style=flat-square)
 ![No tracking](https://img.shields.io/badge/telemetry-none-f472b6?style=flat-square)
 <br>
-![GitHub last commit](https://img.shields.io/github/last-commit/DuarteSantos8/openGym?style=flat-square)
-[![GitHub stars](https://img.shields.io/github/stars/DuarteSantos8/openGym?style=flat-square)](https://github.com/DuarteSantos8/openGym/stargazers)
-[![GitHub issues](https://img.shields.io/github/issues/DuarteSantos8/openGym?style=flat-square)](https://github.com/DuarteSantos8/openGym/issues)
+![GitHub last commit](https://img.shields.io/github/last-commit/pliononek/opengym?style=flat-square)
+[![GitHub stars](https://img.shields.io/github/stars/pliononek/opengym?style=flat-square)](https://github.com/pliononek/opengym/stargazers)
+[![GitHub issues](https://img.shields.io/github/issues/pliononek/opengym?style=flat-square)](https://github.com/pliononek/opengym/issues)
 
 </div>
 
 <br>
 
-> ### 🤖 This is a fork — it adds the AI Coach
+> ### 🤖 This is a fork — it adds an AI Coach, macro tracking and a serverless build
 >
-> A fork of [DuarteSantos8/openGym](https://github.com/DuarteSantos8/openGym) that adds one
-> optional feature: an AI that **designs** your training plan and **revises it from what you
-> actually log**, running on your own server under your own provider account.
+> A fork of [emilfunk/opengym](https://github.com/emilfunk/opengym) (itself a fork of
+> [DuarteSantos8/openGym](https://github.com/DuarteSantos8/openGym)) that adds:
 >
-> Everything else is upstream openGym. With the Coach switched off, this is byte-for-byte the
-> app it forked from.
+> - **AI Coach** — an AI that **designs** your training plan and **revises it from what you
+>   actually log**, running on your own server under your own provider account.
+> - **Food & macro tracking** — log meals by text, photo or barcode, with AI (Gemini) estimating
+>   calories / protein / carbs / fat, plus optional Open Food Facts lookups. Stored locally on
+>   your device.
+> - **Serverless build** — run the live app free on **Cloudflare Pages + Supabase** (email login,
+>   per-user sync) without touching Docker. See [Hosting on Cloudflare Pages + Supabase](docs/HOSTING_SUPABASE.md).
 >
-> **→ [What it does and how to use it](docs/AI_COACH.md)** ·
+> Everything downstream still works: self-host with Docker, passkey sign-in, sync, media,
+> the rest of the app exactly as upstream.
+>
+> **→ [What the AI Coach does and how to use it](docs/AI_COACH.md)** ·
 > [Claude setup](Claude-setup-instructions.md) ·
 > [ChatGPT / Codex setup](ChatGPT-setup-instructions.md) ·
 > [design deck (PDF)](openGym_AI_Strategy.pdf)
