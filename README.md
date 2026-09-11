@@ -4,244 +4,248 @@
 
 <br>
 
-**A self-hosted gym & body-weight tracker you actually own.**
+**Self-hostowany tracker siłowni i wagi ciała, który naprawdę posiadasz.**
 
-Plan your week, run guided workouts, track every set and your body weight over time —
-on your phone, synced across devices, behind your own login.
-Track your food and macros too — by text, photo or barcode, with AI estimating the numbers.
-Self-host it with Docker, or run it free on Cloudflare Pages + Supabase.
-No account on someone else's server, no subscription, no ads.
+Planuj tydzień, prowadź treningi, zapisuj każdą serię i wagę ciała w czasie —
+na telefonie, zsynchronizowane między urządzeniami, za własnym logowaniem.
+Śledź też jedzenie i makroskładniki — opisem, zdjęciem lub kodem kreskowym, z AI szacującym
+wartości. Zainstaluj go przez Docker albo uruchom za darmo na Cloudflare Pages + Supabase.
+Bez konta na cudzym serwerze, bez subskrypcji, bez reklam.
 
 <br>
 
-[![License: AGPL v3](https://img.shields.io/badge/license-AGPL--3.0-a3e635?style=flat-square)](LICENSE)
+[![Licencja: AGPL v3](https://img.shields.io/badge/license-AGPL--3.0-a3e635?style=flat-square)](LICENSE)
 ![Self-hosted](https://img.shields.io/badge/self--hosted-%F0%9F%8F%A0-60a5fa?style=flat-square)
 ![PWA](https://img.shields.io/badge/PWA-installable-a78bfa?style=flat-square)
 ![React](https://img.shields.io/badge/React-19-38bdf8?style=flat-square&logo=react&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-compose-2496ED?style=flat-square&logo=docker&logoColor=white)
 ![Supabase](https://img.shields.io/badge/Supabase-ready-3ECF8E?style=flat-square)
-![No tracking](https://img.shields.io/badge/telemetry-none-f472b6?style=flat-square)
+![Brak telemetrii](https://img.shields.io/badge/telemetry-none-f472b6?style=flat-square)
 <br>
-![GitHub last commit](https://img.shields.io/github/last-commit/pliononek/opengym?style=flat-square)
-[![GitHub stars](https://img.shields.io/github/stars/pliononek/opengym?style=flat-square)](https://github.com/pliononek/opengym/stargazers)
-[![GitHub issues](https://img.shields.io/github/issues/pliononek/opengym?style=flat-square)](https://github.com/pliononek/opengym/issues)
+![Ostatni commit](https://img.shields.io/github/last-commit/pliononek/opengym?style=flat-square)
+[![Gwiazdki](https://img.shields.io/github/stars/pliononek/opengym?style=flat-square)](https://github.com/pliononek/opengym/stargazers)
+[![Problemy](https://img.shields.io/github/issues/pliononek/opengym?style=flat-square)](https://github.com/pliononek/opengym/issues)
 
 </div>
 
 <br>
 
-> ### 🤖 This is a fork — it adds an AI Coach, macro tracking and a serverless build
+> ### 🤖 To jest fork — dodaje AI Coacha, licznik makro i wersję serverless
 >
-> A fork of [emilfunk/opengym](https://github.com/emilfunk/opengym) (itself a fork of
-> [DuarteSantos8/openGym](https://github.com/DuarteSantos8/openGym)) that adds:
+> Fork [emilfunk/opengym](https://github.com/emilfunk/opengym) (sam będącego forkiem
+> [DuarteSantos8/openGym](https://github.com/DuarteSantos8/openGym)), który dodaje:
 >
-> - **AI Coach** — an AI that **designs** your training plan and **revises it from what you
->   actually log**, running on your own server under your own provider account.
-> - **Food & macro tracking** — log meals by text, photo or barcode, with AI (Gemini) estimating
->   calories / protein / carbs / fat, plus optional Open Food Facts lookups. Stored locally on
->   your device.
-> - **Serverless build** — run the live app free on **Cloudflare Pages + Supabase** (email login,
->   per-user sync) without touching Docker. See [Hosting on Cloudflare Pages + Supabase](docs/HOSTING_SUPABASE.md).
+> - **AI Coach** — AI, które **projektuje** Twój plan treningowy i **poprawia go na podstawie
+>   tego, co faktycznie logujesz**, działające na Twoim własnym serwerze i koncie providera.
+> - **Licznik jedzenia i makro** — loguj posiłki opisem, zdjęciem lub kodem, a AI (Gemini) szacuje
+>   kalorie / białko / węglowodany / tłuszcze, z opcjonalnym wyszukiwaniem w Open Food Facts.
+>   Dane są przechowywane lokalnie na Twoim urządzeniu.
+> - **Wersja serverless** — uruchom aplikację za darmo na **Cloudflare Pages + Supabase** (logowanie
+>   e-mailem, synchronizacja per-użytkownik) bez dotykania Dockera. Zobacz [Hosting na Cloudflare Pages + Supabase](docs/HOSTING_SUPABASE.md).
 >
-> Everything downstream still works: self-host with Docker, passkey sign-in, sync, media,
-> the rest of the app exactly as upstream.
+> Reszta działa jak wcześniej: self-host z Dockerem, logowanie passkey, synchronizacja, media,
+> wszystko tak samo jak w oryginale.
 >
-> **→ [What the AI Coach does and how to use it](docs/AI_COACH.md)** ·
-> [Claude setup](Claude-setup-instructions.md) ·
-> [ChatGPT / Codex setup](ChatGPT-setup-instructions.md) ·
-> [design deck (PDF)](openGym_AI_Strategy.pdf)
+> **→ [Jak działa AI Coach i jak go zacząć](docs/AI_COACH.md)** ·
+> [Konfiguracja Claude](Claude-setup-instructions.md) ·
+> [Konfiguracja ChatGPT / Codex](ChatGPT-setup-instructions.md) ·
+> [projekt (PDF)](openGym_AI_Strategy.pdf)
 
 <br>
 
 <div align="center">
 <table>
 <tr>
-<td align="center"><img src="assets/screenshots/home.png" alt="Home" width="230"><br><sub><b>Home</b> — today's workout & weight</sub></td>
-<td align="center"><img src="assets/screenshots/workout.png" alt="Workout" width="230"><br><sub><b>Guided workout</b> — animated demos & sets</sub></td>
-<td align="center"><img src="assets/screenshots/stats.png" alt="Stats" width="230"><br><sub><b>Stats</b> — heatmap, charts & PRs</sub></td>
+<td align="center"><img src="assets/screenshots/home.png" alt="Home" width="230"><br><sub><b>Home</b> — dzisiejszy trening i waga</sub></td>
+<td align="center"><img src="assets/screenshots/workout.png" alt="Workout" width="230"><br><sub><b>Prowadzony trening</b> — animowane demo i serie</sub></td>
+<td align="center"><img src="assets/screenshots/stats.png" alt="Stats" width="230"><br><sub><b>Statystyki</b> — heatmapa, wykresy i rekordy</sub></td>
 </tr>
 </table>
 </div>
 
 <div align="center">
 
-### [🌐 opengym.duarte-santos.ch](https://opengym.duarte-santos.ch) · [▶ Try the live demo](https://duartesantos8.github.io/openGym/)
+### [🌐 opengym.duarte-santos.ch](https://opengym.duarte-santos.ch) · [▶ Wypróbuj live demo](https://duartesantos8.github.io/openGym/)
 
-No signup, nothing to install — it runs entirely in your browser on example data.<br>
-<sub>There's no server behind the demo, so passkey sign-in, sync across devices and the
-admin dashboard only exist in a self-hosted instance.</sub>
+Bez rejestracji, niczego nie instalujesz — wszystko działa w przeglądarce na przykładowych danych.<br>
+<sub>Za demo nie stoi żaden serwer, więc logowanie passkey, synchronizacja i panel admina
+działają wyłącznie w instancji self-hostowanej.</sub>
 
 </div>
 
-## Why
+## Po co to jest
 
-Most workout apps lock your data behind a login on their servers, nag you to upgrade, or
-disappear when the startup does. openGym is the opposite: **it runs on your box, your data
-stays in a folder you control, and it's yours to fork.** It still feels modern — installable
-as a home-screen app, passkey sign-in, offline support, sync across your phone and laptop.
+Większość aplikacji treningowych blokuje Twoje dane za logowaniem na swoich serwerach, męczy
+o dopłatę albo znika, gdy startup upadnie. openGym jest odwrotnością: **działa na Twojej maszynie,
+Twoje dane leżą w katalogu, który kontrolujesz, i możesz go dowolnie forknąć.** Nadal wygląda
+nowocześnie — instaluje się jako aplikacja na ekranie głównym, logowanie passkey, tryb offline,
+synchronizacja między telefonem a laptopem.
 
-## Features
+## Funkcje
 
-- ⚖️ **Body-weight tracking** — interactive chart with a goal line you set, gains/losses colored by whether they move toward it
-- 🏋️ **Weekly plan** — a routine per weekday, over a library of **1,324 exercises** (searchable, with animated demos)
-- 🗓️ **Reschedule any day** — sick, missed a session, or fewer gym days this week? Move a workout to another day without touching your weekly plan
-- ▶️ **Guided workouts** — it knows what day it is and starts today's session; asks your body weight first, pre-fills your weights from last time, rest timer, PR detection, per-exercise weight tracking
-- ☀️ **The screen stays awake while you train** — no unlocking the phone and finding your place again between every set. On for as long as a workout is running, released the moment you finish it, and switchable off in Settings
-- 🔗 **Supersets** — build them, and log them back-to-back with a rest only after the pair
-- ⏱️ **Timed exercises** — planks, hangs, wall sits and loaded carries are logged by time, not reps, with a work timer that counts the set itself (separate from the rest timer) and logs the time you actually held. They can carry weight too
-- 📈 **Progression that follows a rule** — pick one per routine, override it per exercise: linear, **Greyskull LP** (AMRAP top set, double jumps, 10 % resets), double progression through a rep range, or adding time. Your weights are already right when the session opens, and every target says *why* it's that number. Missed reps never advance the load, stalls trigger a deload, and bodyweight exercises progress in reps instead
-- 💪 **Estimated 1RM** — per exercise, from your best eligible set (it names which one), with its own progress curve and a calculator for sets you haven't done. Won't guess above 12 reps
-- 🎯 **Effort per set, in your scale** — an optional third column rating how hard a set was, as **RIR** (reps left in the tank) or **RPE** (the same judgement on a 10-point scale). Off by default; each set keeps the scale it was logged with, and nothing else reads the value — your progression and 1RM are unaffected
-- 🏃 **Cardio** — log time + speed, not just weight × reps
-- 📤 **Share a plan** — send someone your routines and week schedule as a small file (no workouts, no weigh-ins), or print it as a clean PDF. Importing merges, so their plan is never overwritten
-- 🔧 **Filter by equipment** — narrow the library to what you actually own; the options adapt to what you've picked, so every combination on screen has results behind it
-- ✨ **Your own exercises** — a name and a body part is enough; they behave like built-in ones everywhere, with an optional description instead of an animation
-- 🟩 **Activity heatmap** — a GitHub-style year view, shaded by time spent training
-- 💪 **Muscle map** — a front-and-back body diagram shaded by how much work each muscle got, over a week, a month or all time. It names the muscles you *haven't* trained in that period, previews what a routine hits while you build it, and shows what you just trained when you finish. Male or female figure, your pick
-- 🔔 **Push notifications** — rest-timer alerts even with the app closed, plus an optional reminder on days you have a workout planned but haven't logged one. Opt in per profile; keys are generated on first run, nothing to configure
-- 🤖 **AI Coach** (optional) — an AI that *designs* your plan and adjusts it from what you actually log. A short intake produces a complete weekly plan you can refine in plain language; on demand or on a schedule it reads your stalls, effort ratings, adherence and body-weight trend and proposes **discrete, explained changes** you accept one by one. Choose the official Claude Agent SDK or the bundled OpenAI Codex CLI with ChatGPT device-code sign-in; it is off until the instance owner enables it, needs each profile's separate consent, and never changes anything without your approval — every change-set is snapshotted and revertible. The progression engine still owns your session-to-session weights. **[Full guide →](docs/AI_COACH.md)**
-- 🔑 **Passkeys, not passwords** — Face ID / Touch ID / fingerprint login; each profile keeps its own data, synced across devices
-- 🛠️ **Admin dashboard** (optional) — for whoever runs the instance: who's training right now, per-user history, disable accounts, and invite-only signup. Off by default, so a fresh instance stays open with no admin
-- 🎨 **Designed, not assembled** — light/dark themes and 8 accent colors saved to your profile, over a hand-drawn icon set instead of emoji, so it looks the same on every phone
-- 🌍 **12 languages** — full UI translation (EN, DE, ES, FR, IT, PT, PL, TR, RU, ZH, KO, HI); exercise instructions localized in 10 of them, loaded on demand so the app stays fast
-- 📥 **Bring your history with you** — import from **FitNotes** (Android and iOS), **Strong** and **Hevy**, or body weight straight out of an **Apple Health** export. Exercise names are matched against the library and anything unrecognised becomes one of your own exercises, so nothing in the file is dropped
-- 📦 **Yours to keep** — one-tap JSON export/import, guest mode, **no telemetry**
-- 📱 **Standalone Android app** — the whole tracker as a sideloadable APK: no account, no server, data on the phone, native workout reminders ([download](https://opengym.duarte-santos.ch))
+- ⚖️ **Śledzenie wagi ciała** — interaktywny wykres z linią celu; zyski/straty kolorowane zależnie od tego, czy zbliżają do celu
+- 🏋️ **Plan tygodniowy** — rutyna na każdy dzień tygodnia, spośród biblioteki **1 324 ćwiczeń** (z wyszukiwarką i animowanymi demonstracjami)
+- 🗓️ **Przeplanuj dowolny dzień** — chory, przegapiłeś sesję albo masz mniej dni treningowych? Przenieś trening na inny dzień bez ruszania planu tygodniowego
+- ▶️ **Prowadzone treningi** — wie, jaki mamy dzień i startuje dzisiejszą sesję; najpierw pyta o wagę ciała, podpowiada ciężary z poprzednim razem, licznik odpoczynku, wykrywanie rekordów, śledzenie ciężaru dla każdego ćwiczenia
+- ☀️ **Ekran nie gaśnie podczas treningu** — bez odblokowywania telefonu i szukania miejsca między każdą serią. Działa tak długo, jak aktywny jest trening, gaśnie w momencie jego końca; można wyłączyć w Ustawieniach
+- 🔗 **Superserie** — twórz je i loguj jedną po drugiej, z odpoczynkiem dopiero po parze
+- ⏱️ **Ćwiczenia czasowe** — deski, zwisy, podpory i noszenie obciążenia loguje się czasem, nie powtórzeniami; licznik pracy odlicza samo trzymanie (osobno od timera odpoczynku) i zapisuje faktyczny czas przytrzymania. Mogą też mieć obciążenie
+- 📈 **Progresja według reguły** — wybierz jedną na rutynę, nadpisz przy ćwiczeniu: liniowa, **Greyskull LP** (AMRAP na górnej serii, podwójne skoki, reset 10 %), podwójna progresja w zakresie powtórzeń albo dodawanie czasu. Ciężary są już poprawne, gdy otwierasz sesję, a każdy cel tłumaczy, *dlaczego* takie. Niezaliczone powtórzenia nie zwiększają obciążenia, stagnacja wymusza deload, a ćwiczenia z masą ciała progresują w powtórzeniach
+- 💪 **Szacowany 1RM** — dla każdego ćwiczenia, z najlepszej kwalifikującej się serii (podaje, której), z własną krzywą postępu i kalkulatorem dla niewykonanych serii. Nie zgadnie powyżej 12 powtórzeń
+- 🎯 **Wysiłek na serię, w Twojej skali** — opcjonalna trzecia kolumna oceniająca trudność serii jako **RIR** (rezerwa powtórzeń) lub **RPE** (ta sama ocena w skali 10-stopniowej). Domyślnie wyłączone; każda seria zachowuje skalę, w jakiej ją zalogowano, a nic innego nie czyta tej wartości — progresja i 1RM działają bez zmian
+- 🏃 **Cardio** — loguj czas + tempo, nie tylko ciężar × powtórzenia
+- 📤 **Udostępnij plan** — wyślij komuś swoje rutyny i harmonogram tygodnia jako mały plik (bez treningów i wag ciała), albo wydrukuj jako schludny PDF. Importowanie scala, więc nic nie jest nadpisywane
+- 🔧 **Filtruj po sprzęcie** — zawęź bibliotekę do tego, co faktycznie masz; opcje dopasowują się do wyborów, więc każda kombinacja ma wyniki
+- ✨ **Własne ćwiczenia** — wystarczy nazwa i partia ciała; zachowują się jak wbudowane, z opcjonalnym opisem zamiast animacji
+- 🟩 **Heatmapa aktywności** — roczny widok w stylu GitHuba, zacieniony czasem spędzonym na treningu
+- 💪 **Mapa mięśni** — sylwetka z przodu i z tyłu, zacieniona nakładem pracy na każdy mięsień — za tydzień, miesiąc albo cały okres. Wymienia mięśnie, których *nie* trenowałeś w danym okresie, podgląda, co daje rutyna podczas budowania, i pokazuje, co właśnie potrenowałeś po zakończeniu treningu. Figura męska lub żeńska
+- 🔔 **Powiadomienia push** — alerty timera odpoczynku nawet przy zamkniętej aplikacji, plus opcjonalne przypomnienie w dni, gdy masz zaplanowany trening, a nie zalogowałeś jeszcze żadnego. Dołączane per profil; klucze generowane przy pierwszym uruchomieniu, nic nie konfigurujesz
+- 🤖 **AI Coach** (opcjonalnie) — AI, które *projektuje* Twój plan i dostosowuje go na podstawie tego, co faktycznie logujesz. Krótki wywiad daje kompletny plan tygodniowy, który dopracowujesz zwykłym językiem; na żądanie lub według harmonogramu czyta Twoje stagnacje, oceny wysiłku, przestrzeganie planu i trend wagi i proponuje **konkretne, opisane zmiany**, które akceptujesz pojedynczo. Wybierzesz oficjalny Claude Agent SDK lub dołączony OpenAI Codex CLI z logowaniem ChatGPT device-code; jest wyłączony, dopóki właściciel instancji go nie włączy, wymaga osobnej zgody każdego profilu i nigdy nie zmienia niczego bez Twojej akceptacji — każdy zestaw zmian jest migawkowany i odwracalny. Silnik progresji nadal odpowiada za Twoje ciężary sesja po sesji. **[Pełny przewodnik →](docs/AI_COACH.md)**
+- 🔑 **Passkey zamiast haseł** — logowanie Face ID / Touch ID / odciskiem palca; każdy profil trzyma własne dane, zsynchronizowane między urządzeniami
+- 🛠️ **Panel admina** (opcjonalnie) — dla osoby prowadzącej instancję: kto trenuje teraz, historia per-użytkownik, blokowanie kont, rejestracja tylko na zaproszenie. Domyślnie wyłączony, więc świeża instancja pozostaje otwarta bez admina
+- 🎨 **Zaprojektowane, nie sklejone** — motywy jasny/ciemny i 8 kolorów akcentu zapisywanych na profilu, ręcznie rysowany zestaw ikon zamiast emoji, więc wygląda tak samo na każdym telefonie
+- 🌍 **12 języków** — pełne tłumaczenie interfejsu (EN, DE, ES, FR, IT, PT, PL, TR, RU, ZH, KO, HI); instrukcje ćwiczeń zlokalizowane w 10 z nich, ładowane na żądanie, więc aplikacja pozostaje szybka
+- 📥 **Zabierz swoją historię ze sobą** — import z **FitNotes** (Android i iOS), **Strong** i **Hevy**, albo waga ciała prosto z eksportu **Apple Health**. Nazwy ćwiczeń są dopasowywane do biblioteki, a wszystko nierozpoznane staje się Twoimi własnymi ćwiczeniami, więc nic z pliku nie ginie
+- 📦 **Twoje na zawsze** — eksport/import JSON jednym dotknięciem, tryb gościa, **zero telemetrii**
+- 📱 **Samodzielna aplikacja Android** — cały tracker jako doinstalowywany APK: bez konta, bez serwera, dane na telefonie, natywne przypomnienia treningów ([pobierz](https://opengym.duarte-santos.ch))
 
-## Quick start (self-host)
+## Szybki start (self-host)
 
-You need [Docker](https://docs.docker.com/get-docker/) with Compose.
+Potrzebujesz [Dockera](https://docs.docker.com/get-docker/) z Compose.
 
 ```bash
 git clone https://github.com/DuarteSantos8/openGym
 cd openGym
 cp .env.example .env
-docker compose pull   # grab prebuilt images (amd64 + arm64) — skip to build from source instead
+docker compose pull   # pobierz gotowe obrazy (amd64 + arm64) — pominąć, aby budować ze źródeł
 docker compose up -d
 ```
 
-Open **http://localhost:8080**, tap **Create profile**, and you're in. First launch downloads
-the exercise media (~140 MB) once. Prefer building the images yourself instead of pulling from
-`ghcr.io`? Drop the `pull` step and run `docker compose up -d --build` — you don't need Node or
-a build step locally either way.
+Otwórz **http://localhost:8080**, dotknij **Utwórz profil** i jesteś w środku. Pierwsze
+uruchomienie pobiera raz media ćwiczeń (~140 MB). Wolisz zbudować obrazy sam zamiast
+pobierać z `ghcr.io`? Pomiń krok `pull` i uruchom `docker compose up -d --build` — Node ani
+kroku budowy nie potrzebujesz lokalnie.
 
-> Want it reachable from your phone over the internet with passkeys? You'll need an HTTPS
-> domain — a two-line change in `.env`. See **[docs/SELF_HOSTING.md](docs/SELF_HOSTING.md)**.
+> Chcesz mieć dostęp z telefonu przez internet z passkey? Potrzebujesz domeny HTTPS — zmiana
+> dwóch linijek w `.env`. Zobacz **[docs/SELF_HOSTING.md](docs/SELF_HOSTING.md)**.
 
-## Mobile app (no server at all)
+## Aplikacja mobilna (w ogóle bez serwera)
 
-The same codebase also builds a **standalone mobile app** (Capacitor): no account, no sync,
-no backend — everything stays on the phone, with native workout-day reminders and share-sheet
-backups. Self-hosting gets you multi-device sync and profiles for friends & family; the
-mobile app is the install-and-done flavor.
+Ten sam kod buduje też **samodzielną aplikację mobilną** (Capacitor): bez konta, bez
+synchronizacji, bez backendu — wszystko zostaje na telefonie, z natywnymi przypomnieniami
+treningów i kopiami zapasowymi przez arkusz udostępniania. Self-host daje Ci synchronizację
+między urządzeniami i profile dla rodziny i znajomych; aplikacja mobilna to wersja „zainstaluj
+i gotowe".
 
-- **Android:** [**download the APK**](https://opengym.duarte-santos.ch) and sideload it —
-  openGym is deliberately not on the Play Store. Or build it yourself: **[docs/MOBILE.md](docs/MOBILE.md)**.
-- **iPhone:** Apple doesn't allow installing apps outside the App Store, so there is no iOS
-  download. Self-host and add it to your home screen from Safari (it's a full PWA), or build
-  the native app onto your own device from Xcode — see **[docs/MOBILE.md](docs/MOBILE.md)**.
+- **Android:** [**pobierz APK**](https://opengym.duarte-santos.ch) i doinstaluj —
+  openGym celowo nie ma na Play Store. Albo zbuduj sam: **[docs/MOBILE.md](docs/MOBILE.md)**.
+- **iPhone:** Apple nie pozwala instalować aplikacji spoza App Store, więc nie ma pobierania
+  na iOS. Zrób self-host i dodaj do ekranu głównego z Safari (to pełne PWA), albo zbuduj
+  natywną aplikację na własnym urządzeniu z Xcode — zobacz **[docs/MOBILE.md](docs/MOBILE.md)**.
 
-## How it works
+## Jak to działa
 
 ```
 ┌─────────────┐        ┌──────────────────────────────┐
-│  Your phone │──HTTPS─▶│  web  (nginx)                │
-│  / laptop   │        │   ├─ serves the built app    │
-└─────────────┘        │   └─ proxies /api ──────────┐│
+│  Telefon    │──HTTPS─▶│  web  (nginx)               │
+│  / laptop   │        │   ├─ serwuje zbudowaną apkę  │
+└─────────────┘        │   └─ rutuje /api ──────────┐│
                        └──────────────────────────────┘│
-                                                        ▼
-                                        ┌──────────────────────────┐
-                                        │  api  (Node + WebAuthn)  │
-                                        │   └─ ./data (JSON files) │
-                                        └──────────────────────────┘
+                                                         ▼
+                                         ┌──────────────────────────┐
+                                         │  api  (Node + WebAuthn)  │
+                                         │   └─ ./data (pliki JSON) │
+                                         └──────────────────────────┘
 ```
 
-- **frontend/** — React + Vite (React Router + Zustand), built to static files **inside Docker**
-- **api/** — Node with no framework, one dependency (`@simplewebauthn/server`), storing everything as plain JSON files under `./data`
-- **web/** — a multi-stage image that builds the frontend and serves it with nginx, proxying `/api` to the backend so it's all on **one origin** (passkeys require this)
+- **frontend/** — React + Vite (React Router + Zustand), budowany do statycznych plików **wewnątrz Dockera**
+- **api/** — Node bez frameworka, jedna zależność (`@simplewebauthn/server`), zapis wszystkiego w zwykłych plikach JSON w `./data`
+- **web/** — obraz wieloetapowy budujący frontend i serwujący go przez nginx, rutujący `/api` na backend, więc wszystko jest na **jednym pochodzeniu** (wymagane przez passkey)
 
-## Your data
+## Twoje dane
 
-Lives in `./data` on your host: `db.json` (profiles + public passkeys), `state-<user>.json`
-(each user's plan, workouts, body weight, settings), and `secret` (the session-cookie key).
-**Back up `./data` and you've backed up everything.** Passkey private keys never touch the
-server — they stay in your phone's secure hardware / your password manager.
+Leżą w `./data` na Twoim hoście: `db.json` (profile + publiczne passkey), `state-<user>.json`
+(plan, treningi, waga ciała i ustawienia każdego użytkownika) oraz `secret` (klucz ciasteczka
+sesji). **Zrób kopię `./data`, a masz kopię wszystkiego.** Prywatne klucze passkey nigdy nie
+dotykają serwera — zostają w bezpiecznym sprzęcie telefonu / menedżerze haseł.
 
-## Configuration
+## Konfiguracja
 
-All via `.env` (see `.env.example`):
+Wszystko przez `.env` (zobacz `.env.example`):
 
-| Variable      | What it is                                           | Default                 |
-|---------------|------------------------------------------------------|-------------------------|
-| `RP_ID`       | Hostname passkeys are bound to                       | `localhost`             |
-| `ORIGIN`      | Full URL the app is served from                      | `http://localhost:8080` |
-| `WEB_PORT`    | Host port for the web UI                             | `8080`                  |
-| `RP_NAME`     | Name shown in the passkey prompt                     | `openGym`               |
-| `ADMIN_UIDS`  | User ids that get the admin dashboard (comma-separated) | *(none)*             |
-| `INVITE_ONLY` | Require an invite code to create a profile           | *(off)*                 |
-| `COACH_DISABLED` | Force the AI Coach off, whatever the admin dashboard says | *(unset)*        |
+| Zmienna       | Co to jest                                            | Domyślnie               |
+|---------------|-------------------------------------------------------|-------------------------|
+| `RP_ID`       | Nazwa hosta, do której przypięte są passkey           | `localhost`             |
+| `ORIGIN`      | Pełny adres URL, z którego serwowana jest aplikacja   | `http://localhost:8080` |
+| `WEB_PORT`    | Port hosta dla interfejsu web                          | `8080`                  |
+| `RP_NAME`     | Nazwa pokazywana w prośbie o passkey                  | `openGym`               |
+| `ADMIN_UIDS`  | Identyfikatory użytkowników z panelem admina (po przecinku) | *(brak)*           |
+| `INVITE_ONLY` | Wymagaj kodu zaproszenia przy tworzeniu profilu        | *(wył.)*                |
+| `COACH_DISABLED` | Wymusza wyłączenie AI Coacha niezależnie od panelu admina | *(puste)*            |
 
-Push notification keys are generated on first run and saved to `./data/vapid.json` — nothing to set.
+Klucze powiadomień push są generowane przy pierwszym uruchomieniu i zapisywane do
+`./data/vapid.json` — nic do ustawiania.
 
-The **AI Coach** needs no `.env` at all: Claude's Agent SDK and a pinned OpenAI Codex CLI ship
-inside the api image. An admin can add a Claude Code setup token or complete Codex's ChatGPT
-device-code sign-in in the dashboard. See [the AI Coach guide](docs/AI_COACH.md),
-[the self-hosting guide](docs/SELF_HOSTING.md#8-the-ai-coach-optional), and the setup
-walkthroughs for [Claude](Claude-setup-instructions.md) and [ChatGPT/Codex](ChatGPT-setup-instructions.md).
+**AI Coach** nie potrzebuje żadnego `.env`: Claude Agent SDK i przypięty OpenAI Codex CLI
+są wbudowane w obraz api. Admin może dodać token setupu Claude Code albo ukończyć logowanie
+device-code ChatGPT w panelu. Zobacz [przewodnik po AI Coachu](docs/AI_COACH.md),
+[przewodnik po self-hosting](docs/SELF_HOSTING.md#8-the-ai-coach-optional) oraz instrukcje
+dla [Claude](Claude-setup-instructions.md) i [ChatGPT/Codex](ChatGPT-setup-instructions.md).
 
-## Roadmap
+## Plan rozwoju
 
-Rough, community-driven — ideas and PRs welcome:
+Roboczy, prowadzony przez społeczność — pomysły i PR-y mile widziane:
 
-- [x] Standalone mobile app — Android APK to sideload ([download](https://opengym.duarte-santos.ch)); on iOS as a self-hosted PWA (no store listings planned)
-- [x] Automatic progression programs (linear, Greyskull LP, double progression) with stalls and deloads
-- [x] Estimated 1RM per exercise
-- [ ] Percentage / training-max programming (5/3/1-style) on top of the progression engine
-- [x] AI Coach — plan design and feedback-driven plan reviews, from a CLI agent running on your own server
-- [ ] More starter plans (upper/lower, full-body, 5×5)
-- [x] Importers from FitNotes / Strong / Hevy (including the RPE they record), and body weight from Apple Health
-- [x] Effort per set — RIR or RPE, whichever scale you think in
-- [ ] Body measurements (waist, arms…) alongside weight
-- [ ] Per-exercise notes & plate calculator
-- [ ] Exercise instructions in German & Portuguese (UI is translated; upstream dataset doesn't ship these yet)
+- [x] Samodzielna aplikacja mobilna — APK na Androida do doinstalowania ([pobierz](https://opengym.duarte-santos.ch)); na iOS jako PWA self-hostowane (bez planów na store)
+- [x] Automatyczne programy progresji (liniowy, Greyskull LP, podwójna progresja) z stagnacjami i deloadami
+- [x] Szacowany 1RM na ćwiczenie
+- [ ] Procentowa / treningowa progresja maksymalna (stylem 5/3/1) na bazie silnika progresji
+- [x] AI Coach — projektowanie planu i przeglądy planu na podstawie feedbacku, z agenta CLI działającego na Twoim serwerze
+- [ ] Więcej planów startowych (upper/lower, full body, 5×5)
+- [x] Importy z FitNotes / Strong / Hevy (w tym zapisywane przez nie RPE) oraz waga ciała z Apple Health
+- [x] Wysiłek na serię — RIR lub RPE, w skali, w jakiej myślisz
+- [ ] Pomiary ciała (talia, ramiona…) obok wagi
+- [ ] Notatki na ćwiczenie i kalkulator talerzy
+- [ ] Instrukcje ćwiczeń po niemiecku i portugalsku (interfejs jest przetłumaczony; upstream nie ma jeszcze tych danych)
 
-## Tech
+## Technologia
 
-React 19 + Vite (React Router, Zustand) · Node (no framework) · nginx · Docker Compose ·
-WebAuthn · exercise data from [hasaneyldrm/exercises-dataset](https://github.com/hasaneyldrm/exercises-dataset).
-No database server, no cloud dependencies — the frontend builds inside Docker, so self-hosting
-stays a one-command `docker compose up`.
+React 19 + Vite (React Router, Zustand) · Node (bez frameworka) · nginx · Docker Compose ·
+WebAuthn · dane ćwiczeń z [hasaneyldrm/exercises-dataset](https://github.com/hasaneyldrm/exercises-dataset).
+Żaden serwer baz danych, żadnych zależności od chmury — frontend buduje się wewnątrz Dockera,
+więc self-hosting pozostaje jednokomendowym `docker compose up`.
 
-The training logic — progression rules, 1RM estimation, how a logged session is read back —
-lives in pure functions under `frontend/src/lib/` with tests next to them: `npm test` in
-`frontend/`. Vitest is a dev dependency; the app itself ships no runtime dependencies beyond
-React, the router and Zustand.
+Logika treningowa — reguły progresji, szacowanie 1RM, odczytywanie zalogowanej sesji —
+mieszka w czystych funkcjach w `frontend/src/lib/` z testami obok: `npm test` w `frontend/`.
+Vitest jest zależnością deweloperską; sama aplikacja nie ma zależności wykonawczych poza
+Reactem, routerem i Zustandem.
 
-## Community
+## Społeczność
 
-- **[Q&A](https://github.com/DuarteSantos8/openGym/discussions/categories/q-a)** — self-hosting
-  help, passkey/login trouble, "how do I…". Most login problems turn out to be an `RP_ID`/`ORIGIN`
-  mismatch.
-- **[Ideas](https://github.com/DuarteSantos8/openGym/discussions/categories/ideas)** — features
-  worth talking through before anyone writes code.
-- **[Show and tell](https://github.com/DuarteSantos8/openGym/discussions/categories/show-and-tell)**
-  — your setup, your plan templates, whatever you built on top.
-- **[Issues](https://github.com/DuarteSantos8/openGym/issues)** — bugs, and work that's already
-  been agreed on.
+- **[Q&A](https://github.com/DuarteSantos8/openGym/discussions/categories/q-a)** — pomoc przy
+  self-hostingowaniu, problemy z passkey/logowaniem, „jak zrobić…". Większość problemów z
+  logowaniem to niezgodność `RP_ID`/`ORIGIN`.
+- **[Pomysły](https://github.com/DuarteSantos8/openGym/discussions/categories/ideas)** — funkcje
+  warte przedyskutowania, zanim ktokolwiek napisze kod.
+- **[Pokaż i opowiedz](https://github.com/DuarteSantos8/openGym/discussions/categories/show-and-tell)**
+  — Twoja konfiguracja, szablony planów, wszystko, co zbudowano na bazie.
+- **[Problemy](https://github.com/DuarteSantos8/openGym/issues)** — błędy i praca już ustalona.
 
-## Contributing
+## Współpraca
 
-Issues and PRs welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). Good first issues: more starter
-plans, exercise-data languages, import from other trackers. **A ⭐ helps more people find it.**
+Problemy i PR-y mile widziane — zobacz [CONTRIBUTING.md](CONTRIBUTING.md). Dobre pierwsze
+zadania: więcej planów startowych, języki danych ćwiczeń, import z innych trackerów.
+**⭐ pomoże dotrzeć do większej liczby osób.**
 
-openGym is free and stays free: AGPL, no subscription, no paid tier, nothing held back for
-sponsors. If it replaced a paid tracker for you and you want to chip in, the Sponsor button at the
-top of the page is there — a star, a bug report or a PR is worth just as much.
+openGym jest darmowe i pozostanie darmowe: AGPL, bez subskrypcji, bez płatnej wersji, nic
+ukrytego. Jeśli zastąpiło Ci płatny tracker i chcesz się odwdzięczyć, przycisk Sponsor na górze
+strony jest tutaj — gwiazdka, zgłoszenie błędu lub PR znaczą tyle samo.
 
-## License
+## Licencja
 
-[GNU AGPL v3.0](LICENSE) — free and open source. You can self-host, use, modify and share it;
-if you run a modified version as a network service, you must offer that version's source under
-the same license. Nobody can turn openGym into a closed, proprietary product.
+[GNU AGPL v3.0](LICENSE) — darmowe i open source. Możesz hostować, używać, modyfikować
+i udostępniać; jeśli wersję zmodyfikowaną uruchomisz jako usługę sieciową, musisz udostępnić
+jej źródła na tej samej licencji. Nikt nie zamieni openGym w zamknięty produkt.
 
-Exercise images/GIFs are fetched from the upstream dataset and keep their own terms — see [NOTICE.md](NOTICE.md).
+Zdjęcia/GIF-y ćwiczeń pobierane są z upstreamowego zbioru danych i zachowują własne zasady —
+zobacz [NOTICE.md](NOTICE.md).
