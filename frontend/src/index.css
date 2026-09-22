@@ -123,6 +123,8 @@ body{
 }
 button{font:inherit;color:inherit;background:none;border:none;cursor:pointer;letter-spacing:inherit}
 input,select,textarea{font:inherit;color:var(--label);letter-spacing:inherit;color-scheme:dark}
+input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+input[type=number]{-moz-appearance:textfield}
 img{max-width:100%}
 a{color:var(--acc);text-decoration:none}
 :focus{outline:none}

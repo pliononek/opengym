@@ -417,12 +417,13 @@ function SupaLoginSheet({ close }) {
   }
   return <>
     <h3>{t('Sign in')}</h3>
-    <div className="muted small" style={{ marginBottom: 14 }}>{t('Your data syncs between every device you sign in on.')}</div>
-    <input className="input" type="email" inputMode="email" placeholder={t('Email')} autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} />
-    <div style={{ height: 10 }} />
-    <input className="input" type="password" placeholder={t('Password')} autoComplete="current-password" value={password} onChange={e => setPassword(e.target.value)} />
-    <div style={{ height: 12 }} />
-    <Button variant="primary" disabled={busy} onClick={go}>{busy ? t('Signing in…') : t('Sign in')}</Button>
+    <form onSubmit={e => { e.preventDefault(); go() }}>
+      <input className="input" type="email" inputMode="email" placeholder={t('Email')} autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} />
+      <div style={{ height: 10 }} />
+      <input className="input" type="password" placeholder={t('Password')} autoComplete="current-password" value={password} onChange={e => setPassword(e.target.value)} />
+      <div style={{ height: 12 }} />
+      <Button variant="primary" type="submit" disabled={busy}>{busy ? t('Signing in…') : t('Sign in')}</Button>
+    </form>
   </>
 }
 
@@ -447,6 +448,16 @@ function GeminiKeySheet({ close, toast }) {
     </div>
     <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
       <TextField
+        id="gemini-api-key"
+        name="gemini-api-key"
+        autoComplete="off"
+        autoCorrect="off"
+        autoCapitalize="off"
+        spellCheck="false"
+        data-1p-ignore="true"
+        data-lpignore="true"
+        data-bwignore="true"
+        data-form-type="other"
         type={show ? 'text' : 'password'}
         placeholder="AIzaSy..."
         value={key}
@@ -500,7 +511,15 @@ function NutritionCard({ toast }) {
         <Row key={k} icon={k === 'kcal' ? 'flame' : k === 'p' ? 'dumbbell' : k === 'c' ? 'layer' : 'drop'}
           iconTint="var(--acc)" title={label} subtitle={sub}>
           <div className="row" style={{ gap: 6 }}>
-            <NumberField value={goals[k]} onChange={v => setGoal(k, v)} className="f-num mini" />
+            <NumberField
+              id={`nutrition-goal-${k}`}
+              name={`nutrition-goal-${k}`}
+              decimal={false}
+              autoComplete="off"
+              value={goals[k]}
+              onChange={v => setGoal(k, v)}
+              className="f-num mini"
+            />
             <span className="stp-l" style={{ flex: 'none' }}>{k === 'kcal' ? 'kcal' : 'g'}</span>
           </div>
         </Row>

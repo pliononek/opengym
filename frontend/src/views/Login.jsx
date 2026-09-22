@@ -73,13 +73,15 @@ export function SupaRegisterSheet({ close }) {
   return <>
     <h3>{t('Create your profile')}</h3>
     <div className="muted small" style={{ marginBottom: 14 }}>{t('An email and password keep your data synced between devices.')}</div>
-    <input ref={nameRef} className="input" placeholder={t('Your name')} maxLength={40} value={name} onChange={e => setName(e.target.value)} />
-    <div style={{ height: 10 }} />
-    <input className="input" type="email" inputMode="email" placeholder={t('Email')} value={email} onChange={e => setEmail(e.target.value)} />
-    <div style={{ height: 10 }} />
-    <input className="input" type="password" placeholder={t('Password')} value={password} onChange={e => setPassword(e.target.value)} />
-    <div style={{ height: 12 }} />
-    <Button variant="primary" disabled={busy} onClick={go}>{busy ? t('Creating…') : t('Create profile')}</Button>
+    <form onSubmit={e => { e.preventDefault(); go() }}>
+      <input ref={nameRef} className="input" placeholder={t('Your name')} maxLength={40} value={name} onChange={e => setName(e.target.value)} />
+      <div style={{ height: 10 }} />
+      <input className="input" type="email" inputMode="email" placeholder={t('Email')} value={email} onChange={e => setEmail(e.target.value)} />
+      <div style={{ height: 10 }} />
+      <input className="input" type="password" placeholder={t('Password')} value={password} onChange={e => setPassword(e.target.value)} />
+      <div style={{ height: 12 }} />
+      <Button variant="primary" type="submit" disabled={busy}>{busy ? t('Creating…') : t('Create profile')}</Button>
+    </form>
   </>
 }
 
