@@ -18,6 +18,7 @@
 
 /* ---------------------------------------------------------------- tokens -- */
 :root {
+  color-scheme: dark;
   /* surfaces — dark is the default */
   --bg:        #000000;
   --bg-el:     #0e0e10;   /* elevated backdrop (sheets, bars) */
@@ -121,7 +122,7 @@ body{
   font-variant-numeric:tabular-nums;
 }
 button{font:inherit;color:inherit;background:none;border:none;cursor:pointer;letter-spacing:inherit}
-input,select,textarea{font:inherit;color:var(--label);letter-spacing:inherit}
+input,select,textarea{font:inherit;color:var(--label);letter-spacing:inherit;color-scheme:dark}
 img{max-width:100%}
 a{color:var(--acc);text-decoration:none}
 :focus{outline:none}
@@ -937,6 +938,27 @@ h4.sec{
 .f-num::placeholder,.f-editgrid .num::placeholder,.cfgrow-mini .num::placeholder{color:var(--label-3)}
 .f-num:focus,.f-editgrid .num:focus,.cfgrow-mini .num:focus{outline:2px solid var(--acc)}
 .f-num.mini{width:74px;padding:7px 9px;font-size:15px}
+
+/* plan AI number fields (sets, reps, weight) */
+.plan-ai-num {
+  background: var(--surface) !important;
+  color: var(--label) !important;
+  border: 1px solid var(--sep) !important;
+  border-radius: var(--r-sm) !important;
+  padding: 4px 6px !important;
+  font-size: 15px !important;
+  font-weight: 600 !important;
+  font-variant-numeric: tabular-nums !important;
+  text-align: center !important;
+  outline: none !important;
+  color-scheme: dark !important;
+  -webkit-appearance: none !important;
+  appearance: none !important;
+}
+.plan-ai-num:focus {
+  border-color: var(--acc) !important;
+  box-shadow: 0 0 0 1.5px var(--acc) !important;
+}
 
 /* labelled food inputs: label above, black-bordered box below */
 .f-lbl{display:block;font-size:12px;color:var(--label-2);font-weight:600;margin:0 0 5px;text-align:left}

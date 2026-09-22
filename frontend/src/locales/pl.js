@@ -87,6 +87,7 @@ export default {
   'Speed (km/h)': 'Prędkość (km/h)',
   'Sets': 'Serie',
   'Reps': 'Powt.',
+  'Weight': 'Ciężar',
   'Weight ({0})': 'Ciężar ({0})',
   'Add to routine': 'Dodaj do planu',
   'Remove exercise': 'Usuń ćwiczenie',

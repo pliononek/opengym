@@ -611,30 +611,54 @@ export function PlanPreviewSheet({
                       <div className="row" style={{ gap: 6, alignItems: 'center' }}>
                         <span className="small muted">{t('Sets')}:</span>
                         <NumberField
+                          className="plan-ai-num"
                           value={e.sets}
                           decimal={false}
                           onChange={v => updateExercise(rIdx, exIdx, { sets: Math.max(1, v) })}
-                          style={{ width: 44, padding: '3px 4px', textAlign: 'center' }}
+                          style={{
+                            width: 48,
+                            padding: '4px 6px',
+                            textAlign: 'center',
+                            background: 'var(--surface)',
+                            color: 'var(--label)',
+                            border: '1px solid var(--sep)'
+                          }}
                         />
                       </div>
 
                       <div className="row" style={{ gap: 6, alignItems: 'center' }}>
                         <span className="small muted">{t('Reps')}:</span>
                         <NumberField
+                          className="plan-ai-num"
                           value={e.reps}
                           decimal={false}
                           onChange={v => updateExercise(rIdx, exIdx, { reps: Math.max(1, v) })}
-                          style={{ width: 44, padding: '3px 4px', textAlign: 'center' }}
+                          style={{
+                            width: 48,
+                            padding: '4px 6px',
+                            textAlign: 'center',
+                            background: 'var(--surface)',
+                            color: 'var(--label)',
+                            border: '1px solid var(--sep)'
+                          }}
                         />
                       </div>
 
                       <div className="row" style={{ gap: 6, alignItems: 'center' }}>
                         <span className="small muted">{t('Weight')}:</span>
                         <NumberField
+                          className="plan-ai-num"
                           value={e.weight}
                           decimal={true}
                           onChange={v => updateExercise(rIdx, exIdx, { weight: Math.max(0, v) })}
-                          style={{ width: 54, padding: '3px 4px', textAlign: 'center' }}
+                          style={{
+                            width: 58,
+                            padding: '4px 6px',
+                            textAlign: 'center',
+                            background: 'var(--surface)',
+                            color: 'var(--label)',
+                            border: '1px solid var(--sep)'
+                          }}
                         />
                         <span className="small dim">{S.unit}</span>
                       </div>
