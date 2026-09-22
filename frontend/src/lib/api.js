@@ -53,6 +53,37 @@ export async function api(path, opts) {
 const bufToB64u = buf => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
 const b64uToBuf = s => Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0)).buffer
 
+function toCreationOptions(o) {
+  o.challenge = b64uToBuf(o.challenge)
+  o.user.id = b64uToBuf(o.user.id)
+  ;(o.excludeCredentials || []).forEach(c => { c.id = b64uToBuf(c.id) })
+  return o
+}
+function toRequestOptions(o) {
+  o.challenge = b64uToBuf(o.challenge)
+  ;(o.allowCredentials || []).forEach(c => { c.id = b64uToBuf(c.id) })
+  return o
+}
+function credToJSON(cred) {
+  const r = cred.response
+  const out = {
+    id: cred.id, rawId: bufToB64u(cred.rawId), type: cred.type,
+    clientExtensionResults: cred.getClientExtensionResults ? cred.getClientExtensionResults() : {},
+    authenticatorAttachment: cred.authenticatorAttachment || null,
+    response: { clientDataJSON: bufToB64u(r.clientDataJSON) }
+  }
+  if (r.attestationObject) {
+    out.response.attestationObject = bufToB64u(r.attestationObject)
+    out.response.transports = r.getTransports ? r.getTransports() : ['internal']
+  }
+  if (r.authenticatorData) {
+    out.response.authenticatorData = bufToB64u(r.authenticatorData)
+    out.response.signature = bufToB64u(r.signature)
+    out.response.userHandle = r.userHandle ? bufToB64u(r.userHandle) : null
+  }
+  return out
+}
+
 // Passkey flows are a WebAuthn-only path (self-hosted); Supabase builds call the email
 // helpers below instead — same return shape { id, name, admin }.
 export async function passkeyRegister(name, code) {
