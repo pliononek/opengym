@@ -236,6 +236,7 @@ h4.sec{
 .lrow-v{color:var(--label-2);font-size:17px;letter-spacing:-.012em;flex:none}
 .lrow-c{color:var(--label);font-size:15px;flex:none;--icon-stroke:2.4}
 .lrow-k{color:var(--acc);font-size:17px;flex:none;--icon-stroke:2.4}
+.inrow{max-width:140px;flex:none;text-align:right;padding:6px 10px;font-size:15px}
 .lrow.danger,.lrow.danger .lrow-t{color:var(--red)}
 /* an (i) before a row's control: painted small and dim so the control stays the loud thing,
    but with a finger-sized target like everything else — the padding is the hit area and the

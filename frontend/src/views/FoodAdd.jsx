@@ -4,7 +4,7 @@ import { useFood } from '../store/useFood.js'
 import { useUI } from '../store/useUI.js'
 import { todayISO, fmtNum } from '../lib/format.js'
 import { t } from '../lib/i18n.js'
-import { addEntry } from '../lib/nutrition.js'
+import { addEntry, favoritesOf, addFavorite, removeFavorite, updateFavorite, touchFavorite } from '../lib/nutrition.js'
 import { hasKey, estimateFromText, estimateFromPhoto, imageToBase64 } from '../lib/nutrition-ai.js'
 import { searchFood, lookupBarcode, extractCodeFromQr, scalePer100 } from '../lib/nutrition-off.js'
 import Icon from '../components/Icon.jsx'
@@ -21,8 +21,8 @@ function Fld({ label, ...rest }) {
 }
 
 
-function GramsPicker({ name, per100, resolve, close }) {
-  const [g, setG] = useState(100)
+function GramsPicker({ name, per100, defaultG = 100, resolve, close }) {
+  const [g, setG] = useState(defaultG || 100)
   const s = scalePer100(per100, g > 0 ? g : 0)
   return <div style={{ textAlign: 'center' }}>
     <h3>{name}</h3>
@@ -42,14 +42,14 @@ function GramsPicker({ name, per100, resolve, close }) {
   </div>
 }
 
-const gramsSheet = async ({ name, per100, code }) => {
+const gramsSheet = async ({ name, per100, defaultG = 100, code, source = 'off' }) => {
   const ui = useUI.getState()
   const g = await new Promise(resolve => {
-    ui.openSheet(close => <GramsPicker name={name} per100={per100} resolve={resolve} close={close} />)
+    ui.openSheet(close => <GramsPicker name={name} per100={per100} defaultG={defaultG} resolve={resolve} close={close} />)
   })
   if (!g) return null
   const scaled = scalePer100(per100, g)
-  return { name, g, ...scaled, per100, code, source: 'off' }
+  return { name, g, ...scaled, per100, code, source }
 }
 
 function EstimateConfirm({ draft, model, resolve, close }) {
@@ -82,6 +82,7 @@ const confirmEstimateSheet = async (draft, { model } = {}) => {
 // ───────────────────────────────── the page ─────────────────────────────────
 
 const MODES = [
+  { k: 'favorites', icon: 'star', title: () => t('Favorites'), sub: () => t('Your saved foods and meals') },
   { k: 'text', icon: 'pencil', title: () => t('Describe it'), sub: () => t('Type what you ate — AI estimates the macros') },
   { k: 'photo', icon: 'magnifier', title: () => t('Take a photo'), sub: () => t('Snap the plate — AI reads it and estimates a portion') },
   { k: 'barcode', icon: 'scale', title: () => t('Bar code / QR'), sub: () => t('Scan a product — exact data from Open Food Facts') },
@@ -118,11 +119,216 @@ export default function FoodAdd() {
           <span className="am-s">{m.sub()}</span>
         </button>
       ))}
-    </div> : mode === 'text' ? <TextMode toast={toast} onSave={saveEntry} onBack={() => setMode(null)} />
+    </div> : mode === 'favorites' ? <FavoritesMode toast={toast} onSave={saveEntry} onBack={() => setMode(null)} />
+    : mode === 'text' ? <TextMode toast={toast} onSave={saveEntry} onBack={() => setMode(null)} />
     : mode === 'photo' ? <PhotoMode toast={toast} onSave={saveEntry} onBack={() => setMode(null)} />
     : mode === 'barcode' ? <BarcodeMode toast={toast} onSave={saveEntry} onBack={() => setMode(null)} />
     : <ManualMode toast={toast} onSave={saveEntry} onBack={() => setMode(null)} />}
   </div>
+}
+
+/* ──────────────────────────── favorites mode ──────────────────────────── */
+
+function EditFavoriteSheet({ fav, close }) {
+  const toast = useUI(s => s.toast)
+  const [name, setName] = useState(fav.name)
+  const [g, setG] = useState(fav.g || 100)
+  const [kcal, setKcal] = useState(fav.kcal || 0)
+  const [p, setP] = useState(fav.p || 0)
+  const [c, setC] = useState(fav.c || 0)
+  const [f, setF] = useState(fav.f || 0)
+
+  const save = () => {
+    if (!name.trim()) { toast(t('Give it a name')); return }
+    useFood.getState().update(food => updateFavorite(food, fav.id, {
+      name: name.trim(), g: Math.round(g), kcal: Math.round(kcal), p: Math.round(p), c: Math.round(c), f: Math.round(f)
+    }))
+    close()
+    toast(t('Saved'))
+  }
+
+  return <>
+    <h3>{t('Edit favorite')}</h3>
+    <TextField placeholder={t('Name')} value={name} onChange={e => setName(e.target.value)} />
+    <div className="f-editgrid" style={{ marginTop: 12 }}>
+      <Fld label={t('Weight (g)')} value={g} onChange={setG} />
+      <Fld label={t('Calories (kcal)')} value={kcal} onChange={setKcal} />
+      <Fld label={t('Protein (g)')} value={p} onChange={setP} />
+      <Fld label={t('Carbs (g)')} value={c} onChange={setC} />
+      <Fld label={t('Fat (g)')} value={f} onChange={setF} />
+    </div>
+    <div style={{ height: 14 }} />
+    <Button variant="primary" onClick={save}>{t('Save')}</Button>
+    <div style={{ height: 8 }} /><Button variant="ghost" className="dim" onClick={close}>{t('Cancel')}</Button>
+  </>
+}
+
+function NewFavoriteSheet({ close }) {
+  const toast = useUI(s => s.toast)
+  const [name, setName] = useState('')
+  const [g, setG] = useState(100)
+  const [kcal, setKcal] = useState(0)
+  const [p, setP] = useState(0)
+  const [c, setC] = useState(0)
+  const [f, setF] = useState(0)
+
+  const save = () => {
+    if (!name.trim()) { toast(t('Give it a name')); return }
+    if (!kcal && !p && !c && !f) { toast(t('Fill in calories or at least one macro')); return }
+    useFood.getState().update(food => addFavorite(food, {
+      name: name.trim(), g: Math.round(g), kcal: Math.round(kcal), p: Math.round(p), c: Math.round(c), f: Math.round(f), source: 'manual'
+    }))
+    close()
+    toast(t('Added to favorites'))
+  }
+
+  return <>
+    <h3>{t('New favorite')}</h3>
+    <TextField placeholder={t('Name — e.g. Chicken & rice bowl')} value={name} maxLength={120} onChange={e => setName(e.target.value)} />
+    <div className="f-editgrid" style={{ marginTop: 12 }}>
+      <Fld label={t('Weight (g)')} value={g} onChange={setG} />
+      <Fld label={t('Calories (kcal)')} value={kcal} onChange={setKcal} />
+      <Fld label={t('Protein (g)')} value={p} onChange={setP} />
+      <Fld label={t('Carbs (g)')} value={c} onChange={setC} />
+      <Fld label={t('Fat (g)')} value={f} onChange={setF} />
+    </div>
+    <div style={{ height: 14 }} />
+    <Button variant="primary" onClick={save}>{t('Add to favorites')}</Button>
+    <div style={{ height: 8 }} /><Button variant="ghost" className="dim" onClick={close}>{t('Cancel')}</Button>
+  </>
+}
+
+function FavoritesMode({ toast, onSave, onBack }) {
+  const ui = useUI()
+  const food = useFood(s => s.food)
+  const [query, setQuery] = useState('')
+  const favorites = favoritesOf(food)
+
+  const sorted = [...favorites].sort((a, b) => (b.lastUsedAt || 0) - (a.lastUsedAt || 0))
+  const filtered = query.trim()
+    ? sorted.filter(f => f.name.toLowerCase().includes(query.trim().toLowerCase()))
+    : sorted
+
+  const pickFavorite = async fav => {
+    if (fav.g > 0) {
+      let per100 = fav.per100
+      if (!per100) {
+        const factor = 100 / fav.g
+        per100 = {
+          kcal: Math.round(fav.kcal * factor),
+          p: Math.round(fav.p * factor * 10) / 10,
+          c: Math.round(fav.c * factor * 10) / 10,
+          f: Math.round(fav.f * factor * 10) / 10
+        }
+      }
+      const entry = await gramsSheet({
+        name: fav.name,
+        per100,
+        defaultG: fav.g,
+        code: fav.code,
+        source: fav.source || 'manual'
+      })
+      if (entry) {
+        useFood.getState().update(f => touchFavorite(f, fav.id))
+        onSave(entry)
+      }
+    } else {
+      useFood.getState().update(f => touchFavorite(f, fav.id))
+      onSave({
+        name: fav.name,
+        g: 0,
+        kcal: fav.kcal,
+        p: fav.p,
+        c: fav.c,
+        f: fav.f,
+        per100: fav.per100,
+        code: fav.code,
+        source: fav.source || 'manual'
+      })
+    }
+  }
+
+  const editFav = (e, fav) => {
+    e.stopPropagation()
+    ui.openSheet(close => <EditFavoriteSheet fav={fav} close={close} />)
+  }
+
+  const delFav = (e, fav) => {
+    e.stopPropagation()
+    useFood.getState().update(f => removeFavorite(f, fav.id))
+    toast(t('Removed from favorites'))
+  }
+
+  const openNew = () => {
+    ui.openSheet(close => <NewFavoriteSheet close={close} />)
+  }
+
+  return <>
+    {favorites.length > 2 && (
+      <div style={{ marginBottom: 12 }}>
+        <TextField
+          placeholder={t('Search favorites…')}
+          value={query}
+          onChange={e => setQuery(e.target.value)}
+        />
+      </div>
+    )}
+
+    {filtered.length > 0 ? (
+      <div className="food-list" style={{ marginBottom: 12 }}>
+        {filtered.map(f => (
+          <div
+            key={f.id}
+            className="food-item"
+            style={{ cursor: 'pointer' }}
+            onClick={() => pickFavorite(f)}
+          >
+            <span className="f-ic">
+              <Icon name={f.code ? 'apple' : 'starFill'} style={{ color: 'var(--yellow)' }} />
+            </span>
+            <div className="f-main">
+              <div className="f-name">{f.name}</div>
+              <div className="f-meta">
+                {f.g > 0 ? fmtNum(f.g) + ' g · ' : ''}
+                {t('P')} {fmtNum(f.p)} · {t('C')} {fmtNum(f.c)} · {t('F')} {fmtNum(f.f)}
+              </div>
+            </div>
+            <div className="f-cal">{fmtNum(f.kcal)}</div>
+            <button
+              className="iconbtn"
+              style={{ width: 32, height: 30, borderRadius: 8, fontSize: 14 }}
+              onClick={e => editFav(e, f)}
+              aria-label={t('Edit')}
+            >
+              <Icon name="pencil" />
+            </button>
+            <button
+              className="iconbtn"
+              style={{ width: 32, height: 30, borderRadius: 8, fontSize: 14, color: 'var(--red)' }}
+              onClick={e => delFav(e, f)}
+              aria-label={t('Delete')}
+            >
+              <Icon name="trash" />
+            </button>
+          </div>
+        ))}
+      </div>
+    ) : (
+      <div className="empty" style={{ marginBottom: 14 }}>
+        {query.trim()
+          ? t('No matches found')
+          : t('No favorite foods yet. Tap a star in your food diary or create one below.')}
+      </div>
+    )}
+
+    <Button variant="primary" icon="plus" onClick={openNew}>
+      {t('Add new favorite')}
+    </Button>
+    <div style={{ height: 8 }} />
+    <Button variant="ghost" className="dim" onClick={onBack}>
+      {t('Choose a different way')}
+    </Button>
+  </>
 }
 
 /* ─────────────────────────────── text mode ─────────────────────────────── */

@@ -3,8 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useFood } from '../store/useFood.js'
 import { useUI } from '../store/useUI.js'
 import { todayISO, isoOf, fmtNum, fmtDate } from '../lib/format.js'
-import { t } from '../lib/i18n.js'
-import { entriesOf, dayTotals, goalsOf, hasGoals, ringPct, removeEntry, updateEntry } from '../lib/nutrition.js'
+import { entriesOf, dayTotals, goalsOf, hasGoals, ringPct, removeEntry, updateEntry, addFavorite, removeFavorite, isFavorite, getFavoriteMatch } from '../lib/nutrition.js'
 import Icon from '../components/Icon.jsx'
 import { Button, NumberField } from '../components/ui.jsx'
 
@@ -79,6 +78,16 @@ export default function Food() {
     useFood.getState().update(f => removeEntry(f, iso, e.id))
     toast(t('Deleted'))
   }
+  const toggleFav = e => {
+    const match = getFavoriteMatch(food, e)
+    if (match) {
+      useFood.getState().update(f => removeFavorite(f, match.id))
+      toast(t('Removed from favorites'))
+    } else {
+      useFood.getState().update(f => addFavorite(f, e))
+      toast(t('Added to favorites'))
+    }
+  }
   const over = pct > 1
 
   return <div className="narrow">
@@ -148,6 +157,20 @@ export default function Food() {
               </div>
             </div>
             <div className="f-cal">{fmtNum(e.kcal)}</div>
+            <button
+              className="iconbtn"
+              style={{
+                width: 32,
+                height: 30,
+                borderRadius: 8,
+                fontSize: 14,
+                color: isFavorite(food, e) ? 'var(--yellow)' : 'var(--label-3)'
+              }}
+              onClick={() => toggleFav(e)}
+              aria-label={isFavorite(food, e) ? t('Remove from favorites') : t('Add to favorites')}
+            >
+              <Icon name={isFavorite(food, e) ? 'starFill' : 'star'} />
+            </button>
             <button className="iconbtn" style={{ width: 32, height: 30, borderRadius: 8, fontSize: 14 }} onClick={() => editEntry(e)} aria-label={t('Edit')}><Icon name="pencil" /></button>
             <button className="iconbtn" style={{ width: 32, height: 30, borderRadius: 8, fontSize: 14, color: 'var(--red)' }} onClick={() => delEntry(e)} aria-label={t('Delete')}><Icon name="trash" /></button>
           </div>

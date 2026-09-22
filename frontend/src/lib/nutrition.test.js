@@ -3,6 +3,7 @@ import {
   emptyFood, hasGoals, goalsOf, clampGoals,
   entriesOf, dayTotals, ringPct, macroPct,
   clampEntry, addEntry, removeEntry, updateEntry,
+  favoritesOf, addFavorite, removeFavorite, updateFavorite, touchFavorite, isFavorite, getFavoriteMatch,
   parseEstimate
 } from './nutrition.js'
 
@@ -143,5 +144,68 @@ describe('parseEstimate', () => {
   })
   it('throws on garbage', () => {
     expect(() => parseEstimate('no json here')).toThrow()
+  })
+})
+
+describe('favorites', () => {
+  it('adds a favorite and computes per100 when missing', () => {
+    const f = emptyFood()
+    const fav = addFavorite(f, { name: 'Eggs & toast', g: 200, kcal: 400, p: 20, c: 40, f: 16, source: 'manual' })
+    expect(favoritesOf(f)).toHaveLength(1)
+    expect(fav.id).toBeTruthy()
+    expect(fav.name).toBe('Eggs & toast')
+    expect(fav.per100).toEqual({ kcal: 200, p: 10, c: 20, f: 8 })
+    expect(fav.createdAt).toBeTruthy()
+    expect(fav.lastUsedAt).toBeTruthy()
+  })
+
+  it('preserves existing per100 when provided', () => {
+    const f = emptyFood()
+    const fav = addFavorite(f, {
+      name: 'Skyr', g: 150, kcal: 99, p: 18, c: 6, f: 0,
+      per100: { kcal: 66, p: 12, c: 4, f: 0 }, source: 'off'
+    })
+    expect(fav.per100).toEqual({ kcal: 66, p: 12, c: 4, f: 0 })
+  })
+
+  it('removes a favorite by id', () => {
+    const f = emptyFood()
+    const a = addFavorite(f, { name: 'Item A', kcal: 100 })
+    const b = addFavorite(f, { name: 'Item B', kcal: 200 })
+    expect(favoritesOf(f)).toHaveLength(2)
+    removeFavorite(f, a.id)
+    expect(favoritesOf(f)).toHaveLength(1)
+    expect(favoritesOf(f)[0].id).toBe(b.id)
+  })
+
+  it('updates a favorite and scales totals if grams change', () => {
+    const f = emptyFood()
+    const fav = addFavorite(f, {
+      name: 'Oats', g: 100, kcal: 370, p: 13, c: 60, f: 7,
+      per100: { kcal: 370, p: 13, c: 60, f: 7 }
+    })
+    updateFavorite(f, fav.id, { g: 50, name: 'Small oats' })
+    const updated = favoritesOf(f)[0]
+    expect(updated.name).toBe('Small oats')
+    expect(updated.g).toBe(50)
+    expect(updated.kcal).toBe(185)
+    expect(updated.p).toBe(7)
+  })
+
+  it('detects isFavorite case-insensitively and by barcode', () => {
+    const f = emptyFood()
+    addFavorite(f, { name: 'Protein Bar', code: '12345678', kcal: 200 })
+    expect(isFavorite(f, { name: 'protein bar' })).toBe(true)
+    expect(isFavorite(f, { name: 'Different', code: '12345678' })).toBe(true)
+    expect(isFavorite(f, { name: 'Other' })).toBe(false)
+    expect(getFavoriteMatch(f, { name: 'PROTEIN BAR' })?.name).toBe('Protein Bar')
+  })
+
+  it('touches favorite updating lastUsedAt', () => {
+    const f = emptyFood()
+    const fav = addFavorite(f, { name: 'Coffee', kcal: 50 })
+    fav.lastUsedAt = 1000
+    touchFavorite(f, fav.id)
+    expect(favoritesOf(f)[0].lastUsedAt).toBeGreaterThan(1000)
   })
 })

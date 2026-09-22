@@ -17,7 +17,7 @@ export const useFood = create(set => {
       set({ food: next })
     },
     clear() {
-      current = { goals: { kcal: 0, p: 0, c: 0, f: 0 }, day: {} }
+      current = { goals: { kcal: 0, p: 0, c: 0, f: 0 }, day: {}, favorites: current?.favorites || [] }
       saveFood(current)
       set({ food: current })
     }

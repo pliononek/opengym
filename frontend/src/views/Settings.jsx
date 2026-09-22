@@ -16,6 +16,7 @@ import { forgetCoach } from '../lib/coach-api.js'
 import { goalsOf, clampGoals } from '../lib/nutrition.js'
 import { useFood } from '../store/useFood.js'
 import { getGeminiKey, setGeminiKey, getModel, setModel, MODEL_CHAIN, hasKey } from '../lib/nutrition-ai.js'
+import { useUpdater, APP_VERSION, BUILD_TIME } from '../lib/updater.js'
 import { SUPA } from '../lib/supabase-meta.js'
 import Icon from '../components/Icon.jsx'
 import { Section, Row, SelectRow, Switch, Segmented, Button, TextField, NumberField } from '../components/ui.jsx'
@@ -28,6 +29,8 @@ export default function Settings() {
   const config = useStore(s => s.config)
   const { update, replaceState, setUser, pullState, pushState, signOut, signOutAll, resetDemo } = useStore()
   const toast = useUI(s => s.toast)
+  const checkForUpdate = useUpdater(s => s.checkForUpdate)
+  const checkingUpdate = useUpdater(s => s.checking)
   const fileRef = useRef(null)
   const importRef = useRef(null)
   const wakeOK = wakeLockSupported()
@@ -199,6 +202,21 @@ export default function Settings() {
           ))}
         </div>
       </div>
+    </Section>
+
+    {/* ---------- updates: auto update switch & manual check ---------- */}
+    <Section title={t('Updates')} footer={t('Automatically install new versions and improvements as soon as they are published.')}>
+      <Row icon="reset" iconTint="var(--blue)" title={t('Auto update')}
+        subtitle={S.autoUpdate !== false ? t('Enabled — updates install automatically') : t('Disabled — notify me when updates are available')}>
+        <Switch checked={S.autoUpdate !== false} onChange={v => update(s => { s.autoUpdate = v })} />
+      </Row>
+      <Row icon="download" iconTint="var(--teal)" title={t('Check for updates')}
+        subtitle={checkingUpdate ? t('Checking for updates…') : `${t('Version')} ${APP_VERSION}${BUILD_TIME ? ` · ${BUILD_TIME.slice(0, 10)}` : ''}`}
+        accessory={checkingUpdate ? undefined : 'chevron'}
+        onClick={async () => {
+          if (checkingUpdate) return
+          await checkForUpdate({ manual: true, toast })
+        }} />
     </Section>
 
     {/* ---------- data: fill it, bring things over, back it up, wipe it ---------- */}
@@ -412,6 +430,57 @@ function SupaLoginSheet({ close }) {
 
 // Goals and the food diary live only in this browser (store/useFood.js) — never in the
 // synced profile, never on Supabase. Fields are a labelled list, not a bare grid.
+function GeminiKeySheet({ close, toast }) {
+  const [key, setKey] = useState(getGeminiKey() || '')
+  const [show, setShow] = useState(false)
+  const save = () => {
+    const trimmed = key.trim()
+    setGeminiKey(trimmed)
+    if (trimmed) toast(t('Gemini key saved'))
+    else toast(t('Gemini key removed'))
+    close()
+  }
+  return <>
+    <h3>{t('Gemini API key')}</h3>
+    <div className="muted small" style={{ marginBottom: 14 }}>
+      {t('Stored in this browser only — never synced to your profile.')} {t('For AI food estimates (text & photo) in the Food tab.')}
+    </div>
+    <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+      <TextField
+        type={show ? 'text' : 'password'}
+        placeholder="AIzaSy..."
+        value={key}
+        onChange={e => setKey(e.target.value)}
+        style={{ paddingRight: 42 }}
+        autoFocus
+      />
+      <button
+        type="button"
+        className="iconbtn"
+        style={{ position: 'absolute', right: 8, width: 28, height: 28, fontSize: 16 }}
+        onClick={() => setShow(!show)}
+        aria-label={show ? t('Hide') : t('Show')}
+      >
+        <Icon name={show ? 'eyeSlash' : 'eye'} />
+      </button>
+    </div>
+    <div style={{ height: 14 }} />
+    <Button variant="primary" onClick={save}>{t('Save')}</Button>
+    {getGeminiKey() && (
+      <>
+        <div style={{ height: 8 }} />
+        <Button variant="ghost" className="dim" style={{ color: 'var(--red)' }} onClick={() => {
+          setGeminiKey('')
+          toast(t('Gemini key removed'))
+          close()
+        }}>{t('Delete key')}</Button>
+      </>
+    )}
+    <div style={{ height: 8 }} />
+    <Button variant="ghost" className="dim" onClick={close}>{t('Cancel')}</Button>
+  </>
+}
+
 function NutritionCard({ toast }) {
   const food = useFood(s => s.food)
   const { update, clear } = useFood()
@@ -436,11 +505,18 @@ function NutritionCard({ toast }) {
           </div>
         </Row>
       ))}
-      <Row icon="key" iconTint="var(--indigo)" title={t('Gemini API key')}
-        subtitle={getGeminiKey() ? t('Stored in this browser only.') : t('For AI food estimates (text & photo).')}>
-        <TextField className="inrow" type="password" placeholder={t('key')} defaultValue={getGeminiKey()}
-          onBlur={e => { setGeminiKey(e.target.value.trim()); if (e.target.value.trim()) toast(t('Gemini key saved')) }} />
-      </Row>
+      <Row
+        icon="key"
+        iconTint="var(--indigo)"
+        title={t('Gemini API key')}
+        subtitle={getGeminiKey() ? t('Stored in this browser only.') : t('For AI food estimates (text & photo).')}
+        value={getGeminiKey() ? '••••••••' : t('Not set')}
+        accessory="chevron"
+        onClick={() => {
+          const { openSheet } = useUI.getState()
+          openSheet(close => <GeminiKeySheet close={close} toast={toast} />)
+        }}
+      />
       <Row icon="sparkles" iconTint="var(--acc)" title={t('AI model')} value={getModel() || MODEL_CHAIN[0]} accessory="chevron" onClick={() => {
         const { openSheet } = useUI.getState()
         openSheet(close => (

@@ -29,6 +29,8 @@ import Admin from './views/Admin.jsx'
 import Coach from './views/Coach.jsx'
 import CoachIntake from './views/CoachIntake.jsx'
 import CoachProposal from './views/CoachProposal.jsx'
+import UpdateBanner from './components/UpdateBanner.jsx'
+import { initUpdater } from './lib/updater.js'
 
 bindUI(useUI)   // lets the shared controls open sheets without importing the store at module scope
 
@@ -66,6 +68,7 @@ function Shell() {
 
   return (
     <>
+      <UpdateBanner />
       {/* keyed on the route: a view that throws is contained, and switching tabs
           re-mounts the boundary, so the tab bar is always a way out */}
       <div id="app" className="vfade" key={loc.pathname}>
@@ -104,6 +107,9 @@ function Shell() {
 
 export default function App() {
   const boot = useStore(s => s.boot)
-  useEffect(() => { boot() }, [boot])
+  useEffect(() => {
+    boot()
+    initUpdater()
+  }, [boot])
   return <HashRouter><Shell /></HashRouter>
 }

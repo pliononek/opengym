@@ -26,10 +26,17 @@ self.addEventListener('notificationclick', e => {
   }))
 })
 
+self.addEventListener('message', e => {
+  if (e.data && (e.data.type === 'SKIP_WAITING' || e.data === 'skipWaiting')) {
+    self.skipWaiting()
+  }
+})
+
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url)
   if (e.request.method !== 'GET' || url.origin !== location.origin) return
   if (url.pathname.startsWith('/api/')) return    // never cache auth/data
+  if (url.pathname.endsWith('/version.json') || url.pathname === '/version.json') return // never cache version checks
 
   const isMedia = url.pathname.includes('/img/') || url.pathname.includes('/gif/')
   if (isMedia) {

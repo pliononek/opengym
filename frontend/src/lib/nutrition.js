@@ -14,7 +14,7 @@ export const ENTRY_MAX = 80
 
 export const FOOD_KEY = 'gym_food_v1'
 
-export const emptyFood = () => ({ goals: { kcal: 0, p: 0, c: 0, f: 0 }, day: {} })
+export const emptyFood = () => ({ goals: { kcal: 0, p: 0, c: 0, f: 0 }, day: {}, favorites: [] })
 
 export function loadFood() {
   try {
@@ -23,7 +23,8 @@ export function loadFood() {
       const f = JSON.parse(raw)
       return {
         goals: Object.assign(emptyFood().goals, f.goals || {}),
-        day: f.day || {}
+        day: f.day || {},
+        favorites: Array.isArray(f.favorites) ? f.favorites : []
       }
     }
   } catch { /* corrupt or missing */ }
@@ -132,6 +133,89 @@ export function updateEntry(food, iso, id, patch) {
     next.f = Math.round(next.per100.f * r)
   }
   day[i] = next
+}
+
+/* ============================ favorites ============================ */
+
+export const FAVORITES_MAX = 100
+
+export const favoritesOf = food => (Array.isArray(food?.favorites) ? food.favorites : [])
+
+export function addFavorite(food, entry) {
+  const favs = (food.favorites = food.favorites || [])
+  const clamped = clampEntry(entry)
+  if (!clamped.per100 && clamped.g > 0) {
+    const factor = 100 / clamped.g
+    clamped.per100 = {
+      kcal: Math.round(clamped.kcal * factor),
+      p: Math.round(clamped.p * factor * 10) / 10,
+      c: Math.round(clamped.c * factor * 10) / 10,
+      f: Math.round(clamped.f * factor * 10) / 10
+    }
+  }
+  const now = Date.now()
+  const item = {
+    id: uid(),
+    ...clamped,
+    createdAt: now,
+    lastUsedAt: now
+  }
+  favs.unshift(item)
+  if (favs.length > FAVORITES_MAX) favs.pop()
+  return item
+}
+
+export function removeFavorite(food, id) {
+  if (!food.favorites) return
+  food.favorites = food.favorites.filter(f => f.id !== id)
+}
+
+export function updateFavorite(food, id, patch) {
+  if (!food.favorites) return
+  const i = food.favorites.findIndex(f => f.id === id)
+  if (i === -1) return
+  const prev = food.favorites[i]
+  const next = clampEntry({ ...prev, ...patch })
+  if (next.per100 && next.g > 0) {
+    const r = next.g / 100
+    next.kcal = Math.round(next.per100.kcal * r)
+    next.p = Math.round(next.per100.p * r)
+    next.c = Math.round(next.per100.c * r)
+    next.f = Math.round(next.per100.f * r)
+  }
+  food.favorites[i] = {
+    ...prev,
+    ...next,
+    id: prev.id,
+    createdAt: prev.createdAt,
+    lastUsedAt: prev.lastUsedAt
+  }
+}
+
+export function touchFavorite(food, id) {
+  if (!food.favorites) return
+  const item = food.favorites.find(f => f.id === id)
+  if (item) {
+    item.lastUsedAt = Date.now()
+  }
+}
+
+export function isFavorite(food, entry) {
+  if (!food?.favorites?.length || !entry) return false
+  const nameNorm = String(entry.name || '').trim().toLowerCase()
+  return food.favorites.some(f => {
+    if (entry.code && f.code && entry.code === f.code) return true
+    return String(f.name || '').trim().toLowerCase() === nameNorm
+  })
+}
+
+export function getFavoriteMatch(food, entry) {
+  if (!food?.favorites?.length || !entry) return null
+  const nameNorm = String(entry.name || '').trim().toLowerCase()
+  return food.favorites.find(f => {
+    if (entry.code && f.code && entry.code === f.code) return true
+    return String(f.name || '').trim().toLowerCase() === nameNorm
+  }) || null
 }
 
 /* ============================ AI output parsing ============================ */
