@@ -424,7 +424,8 @@ export function PlanPreviewSheet({
                   alignItems: 'center',
                   marginBottom: 12,
                   paddingBottom: 10,
-                  borderBottom: '1px solid var(--sep)'
+                  borderBottom: '1px solid var(--sep)',
+                  flexWrap: 'wrap'
                 }}
               >
                 <button
@@ -598,69 +599,112 @@ export function PlanPreviewSheet({
 
                     {/* Numeric parameters: Sets, Reps, Weight */}
                     <div
-                      className="row"
                       style={{
-                        gap: 12,
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+                        gap: 8,
                         marginTop: 4,
                         background: 'var(--surface-3)',
-                        padding: '6px 10px',
+                        padding: '8px 10px',
                         borderRadius: 8,
                         alignItems: 'center'
                       }}
                     >
-                      <div className="row" style={{ gap: 6, alignItems: 'center' }}>
-                        <span className="small muted">{t('Sets')}:</span>
+                      <div
+                        style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: 3,
+                          minWidth: 0,
+                          alignItems: 'stretch'
+                        }}
+                      >
+                        <span
+                          className="small muted"
+                          style={{
+                            fontSize: 11,
+                            fontWeight: 600,
+                            textAlign: 'center',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.04em',
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis'
+                          }}
+                        >
+                          {t('Sets')}
+                        </span>
                         <NumberField
                           className="plan-ai-num"
                           value={e.sets}
                           decimal={false}
                           onChange={v => updateExercise(rIdx, exIdx, { sets: Math.max(1, v) })}
-                          style={{
-                            width: 48,
-                            padding: '4px 6px',
-                            textAlign: 'center',
-                            background: 'var(--surface)',
-                            color: 'var(--label)',
-                            border: '1px solid var(--sep)'
-                          }}
                         />
                       </div>
 
-                      <div className="row" style={{ gap: 6, alignItems: 'center' }}>
-                        <span className="small muted">{t('Reps')}:</span>
+                      <div
+                        style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: 3,
+                          minWidth: 0,
+                          alignItems: 'stretch'
+                        }}
+                      >
+                        <span
+                          className="small muted"
+                          style={{
+                            fontSize: 11,
+                            fontWeight: 600,
+                            textAlign: 'center',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.04em',
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis'
+                          }}
+                        >
+                          {t('Reps')}
+                        </span>
                         <NumberField
                           className="plan-ai-num"
                           value={e.reps}
                           decimal={false}
                           onChange={v => updateExercise(rIdx, exIdx, { reps: Math.max(1, v) })}
-                          style={{
-                            width: 48,
-                            padding: '4px 6px',
-                            textAlign: 'center',
-                            background: 'var(--surface)',
-                            color: 'var(--label)',
-                            border: '1px solid var(--sep)'
-                          }}
                         />
                       </div>
 
-                      <div className="row" style={{ gap: 6, alignItems: 'center' }}>
-                        <span className="small muted">{t('Weight')}:</span>
+                      <div
+                        style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: 3,
+                          minWidth: 0,
+                          alignItems: 'stretch'
+                        }}
+                      >
+                        <span
+                          className="small muted"
+                          style={{
+                            fontSize: 11,
+                            fontWeight: 600,
+                            textAlign: 'center',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.04em',
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis'
+                          }}
+                          title={t('Weight ({0})', S.unit)}
+                        >
+                          {t('Weight ({0})', S.unit)}
+                        </span>
                         <NumberField
                           className="plan-ai-num"
                           value={e.weight}
                           decimal={true}
                           onChange={v => updateExercise(rIdx, exIdx, { weight: Math.max(0, v) })}
-                          style={{
-                            width: 58,
-                            padding: '4px 6px',
-                            textAlign: 'center',
-                            background: 'var(--surface)',
-                            color: 'var(--label)',
-                            border: '1px solid var(--sep)'
-                          }}
                         />
-                        <span className="small dim">{S.unit}</span>
                       </div>
                     </div>
                   </div>
