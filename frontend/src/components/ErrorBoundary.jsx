@@ -13,8 +13,8 @@ import { Button } from './ui.jsx'
  * so switching tabs re-mounts it and clears the error by itself.
  */
 export default class ErrorBoundary extends Component {
-  constructor(props) { super(props); this.state = { failed: false } }
-  static getDerivedStateFromError() { return { failed: true } }
+  constructor(props) { super(props); this.state = { failed: false, error: null } }
+  static getDerivedStateFromError(error) { return { failed: true, error } }
   componentDidCatch(err) { console.error('openGym render error:', err) }
 
   render() {
@@ -26,6 +26,26 @@ export default class ErrorBoundary extends Component {
           <div className="ico"><Icon name="info" /></div>
           <div style={{ fontWeight: 600, marginBottom: 6 }}>{t('Something went wrong')}</div>
           {t('This screen could not be drawn. Your data is safe on this device.')}
+          {this.state.error && (
+            <details style={{ marginTop: 14, textAlign: 'left' }}>
+              <summary className="small dim" style={{ cursor: 'pointer', textAlign: 'center' }}>
+                {t('Technical details')}
+              </summary>
+              <pre style={{
+                marginTop: 8,
+                padding: '8px 10px',
+                background: 'var(--surface-2)',
+                border: '1px solid var(--sep)',
+                borderRadius: 8,
+                fontSize: 12,
+                color: 'var(--red)',
+                whiteSpace: 'pre-wrap',
+                wordBreak: 'break-all'
+              }}>
+                {String(this.state.error?.message || this.state.error)}
+              </pre>
+            </details>
+          )}
         </div>
         <Button variant="primary" icon="reset" onClick={() => location.reload()}>{t('Reload openGym')}</Button>
         {active && <>

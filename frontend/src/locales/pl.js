@@ -452,6 +452,7 @@ export default {
   'This screen could not be drawn. Your data is safe on this device.': 'Nie udało się wyświetlić tego ekranu. Twoje dane na tym urządzeniu są bezpieczne.',
   'Reload openGym': 'Przeładuj openGym',
   'Discard the running workout': 'Odrzuć trwający trening',
+  'Technical details': 'Szczegóły techniczne',
 
   // --- v1.2.2: timed sets, progression, estimated 1RM (#16 #17 #18) ---
   'Top set': 'Najlepsza seria',

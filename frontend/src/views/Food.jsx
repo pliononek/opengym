@@ -66,11 +66,11 @@ export default function Food() {
   const ui = useUI()
   const [iso, setIso] = useState(todayISO())
 
-  const goals = goalsOf(food)
+  const goals = goalsOf(food) || { kcal: 0, p: 0, c: 0, f: 0 }
   const haveGoals = hasGoals(food)
-  const totals = dayTotals(food, iso)
-  const pct = ringPct(food, iso)
-  const entries = entriesOf(food, iso)
+  const totals = dayTotals(food, iso) || { kcal: 0, p: 0, c: 0, f: 0 }
+  const pct = ringPct(food, iso) || 0
+  const entries = entriesOf(food, iso) || []
   const R = 91
   const C = 2 * Math.PI * R
 
@@ -115,15 +115,15 @@ export default function Food() {
             </svg>
             <div className="ring-center">
               <div className="ring-value">{fmtNum(totals.kcal)}</div>
-              <div className="ring-dim">{t('of {0} kcal', fmtNum(goals.kcal))}{over ? ' · ' + t('over') : ''}</div>
+              <div className="ring-dim">{t('of {0} kcal', fmtNum(goals.kcal || 0))}{over ? ' · ' + t('over') : ''}</div>
               <div className="ring-label">{t('calories')}</div>
             </div>
           </div>
         </div>
         <div className="macros">
           {[['p', t('Protein')], ['c', t('Carbs')], ['f', t('Fat')]].map(([k, label]) => {
-            const v = totals[k]
-            const g = goals[k] || 0
+            const v = totals[k] || 0
+            const g = goals?.[k] || 0
             const overK = g > 0 && v > g
             return <div key={k} className={'macro' + (overK ? ' over' : '')}>
               <div className="m-l">{label}</div>
