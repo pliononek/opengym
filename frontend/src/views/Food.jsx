@@ -26,32 +26,92 @@ function EditEntrySheet({ iso, entry, close }) {
   const [p, setP] = useState(entry.p || 0)
   const [c, setC] = useState(entry.c || 0)
   const [f, setF] = useState(entry.f || 0)
-  const save = () => {
-    if (entry.per100 && g > 0) {
-      useFood.getState().update(food => updateEntry(food, iso, entry.id, { g: Math.round(g) }))
-      close(); toast(t('Portion updated'))
-      return
+
+  const [per100, setPer100] = useState(() => {
+    if (entry.per100 && (entry.per100.kcal > 0 || entry.per100.p > 0 || entry.per100.c > 0 || entry.per100.f > 0)) {
+      return {
+        kcal: Number(entry.per100.kcal) || 0,
+        p: Number(entry.per100.p) || 0,
+        c: Number(entry.per100.c) || 0,
+        f: Number(entry.per100.f) || 0,
+      }
     }
-    useFood.getState().update(food => updateEntry(food, iso, entry.id, {
-      g: Math.round(g), kcal: Math.round(kcal), p: Math.round(p), c: Math.round(c), f: Math.round(f)
-    }))
-    close(); toast(t('Saved'))
+    const entryG = Number(entry.g) || 0
+    if (entryG > 0) {
+      const factor = 100 / entryG
+      return {
+        kcal: Math.round((Number(entry.kcal) || 0) * factor),
+        p: Math.round((Number(entry.p) || 0) * factor * 10) / 10,
+        c: Math.round((Number(entry.c) || 0) * factor * 10) / 10,
+        f: Math.round((Number(entry.f) || 0) * factor * 10) / 10,
+      }
+    }
+    return null
+  })
+
+  const onGramsChange = newG => {
+    const gVal = typeof newG === 'number' ? newG : parseFloat(newG) || 0
+    setG(gVal)
+    if (gVal > 0 && per100) {
+      const r = gVal / 100
+      setKcal(Math.round(per100.kcal * r))
+      setP(Math.round(per100.p * r * 10) / 10)
+      setC(Math.round(per100.c * r * 10) / 10)
+      setF(Math.round(per100.f * r * 10) / 10)
+    } else if (gVal > 0 && !per100 && (kcal > 0 || p > 0 || c > 0 || f > 0)) {
+      const factor = 100 / gVal
+      const derived = {
+        kcal: Math.round((Number(kcal) || 0) * factor),
+        p: Math.round((Number(p) || 0) * factor * 10) / 10,
+        c: Math.round((Number(c) || 0) * factor * 10) / 10,
+        f: Math.round((Number(f) || 0) * factor * 10) / 10,
+      }
+      setPer100(derived)
+    }
   }
-  const F = ({ label, value, setV }) => (
+
+  const onMacroChange = (setter, key, val) => {
+    const numVal = Math.max(0, Number(val) || 0)
+    setter(numVal)
+    const currentG = Number(g) || 0
+    if (currentG > 0) {
+      const factor = 100 / currentG
+      setPer100(prev => ({
+        ...(prev || { kcal: 0, p: 0, c: 0, f: 0 }),
+        [key]: key === 'kcal' ? Math.round(numVal * factor) : Math.round(numVal * factor * 10) / 10,
+      }))
+    }
+  }
+
+  const save = () => {
+    useFood.getState().update(food => updateEntry(food, iso, entry.id, {
+      g: Math.round(g),
+      kcal: Math.round(kcal),
+      p: Math.round(p * 10) / 10,
+      c: Math.round(c * 10) / 10,
+      f: Math.round(f * 10) / 10,
+      per100: per100 || entry.per100,
+    }))
+    close()
+    toast(t('Saved'))
+  }
+
+  const F = ({ label, value, onChange }) => (
     <div className="cfgrow-mini">
       <span className="stp-l">{label}</span>
-      <NumberField value={value} onChange={setV} />
+      <NumberField value={value} onChange={onChange} />
     </div>
   )
+
   return <>
     <h3>{t('Edit entry')}</h3>
     <div className="muted small" style={{ marginBottom: 12 }}>{entry.name}</div>
     <div className="f-editgrid">
-      <F label="g" value={g} setV={setG} />
-      <F label="kcal" value={kcal} setV={setKcal} />
-      <F label="P" value={p} setV={setP} />
-      <F label="C" value={c} setV={setC} />
-      <F label="F" value={f} setV={setF} />
+      <F label="g" value={g} onChange={onGramsChange} />
+      <F label="kcal" value={kcal} onChange={v => onMacroChange(setKcal, 'kcal', v)} />
+      <F label="P" value={p} onChange={v => onMacroChange(setP, 'p', v)} />
+      <F label="C" value={c} onChange={v => onMacroChange(setC, 'c', v)} />
+      <F label="F" value={f} onChange={v => onMacroChange(setF, 'f', v)} />
     </div>
     <div style={{ height: 14 }} />
     <Button variant="primary" onClick={save}>{t('Save')}</Button>

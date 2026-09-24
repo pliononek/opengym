@@ -54,20 +54,90 @@ const gramsSheet = async ({ name, per100, defaultG = 100, code, source = 'off' }
 
 function EstimateConfirm({ draft, model, resolve, close }) {
   const [e, setE] = useState(draft)
-  const set = patch => setE(x => ({ ...x, ...patch }))
+
+  const [per100, setPer100] = useState(() => {
+    if (draft.per100 && (draft.per100.kcal > 0 || draft.per100.p > 0 || draft.per100.c > 0 || draft.per100.f > 0)) {
+      return {
+        kcal: Number(draft.per100.kcal) || 0,
+        p: Number(draft.per100.p) || 0,
+        c: Number(draft.per100.c) || 0,
+        f: Number(draft.per100.f) || 0,
+      }
+    }
+    const g = Number(draft.g) || 0
+    if (g > 0) {
+      const factor = 100 / g
+      return {
+        kcal: Math.round((Number(draft.kcal) || 0) * factor),
+        p: Math.round((Number(draft.p) || 0) * factor * 10) / 10,
+        c: Math.round((Number(draft.c) || 0) * factor * 10) / 10,
+        f: Math.round((Number(draft.f) || 0) * factor * 10) / 10,
+      }
+    }
+    return null
+  })
+
+  const onGramsChange = newG => {
+    const gVal = typeof newG === 'number' ? newG : parseFloat(newG) || 0
+    if (gVal > 0 && per100) {
+      const r = gVal / 100
+      const nextKcal = Math.round(per100.kcal * r)
+      const nextP = Math.round(per100.p * r * 10) / 10
+      const nextC = Math.round(per100.c * r * 10) / 10
+      const nextF = Math.round(per100.f * r * 10) / 10
+      setE(prev => ({
+        ...prev,
+        g: gVal,
+        kcal: nextKcal,
+        p: nextP,
+        c: nextC,
+        f: nextF,
+        per100,
+      }))
+    } else if (gVal > 0 && !per100 && (e.kcal > 0 || e.p > 0 || e.c > 0 || e.f > 0)) {
+      const factor = 100 / gVal
+      const derived = {
+        kcal: Math.round((Number(e.kcal) || 0) * factor),
+        p: Math.round((Number(e.p) || 0) * factor * 10) / 10,
+        c: Math.round((Number(e.c) || 0) * factor * 10) / 10,
+        f: Math.round((Number(e.f) || 0) * factor * 10) / 10,
+      }
+      setPer100(derived)
+      setE(prev => ({ ...prev, g: gVal, per100: derived }))
+    } else {
+      setE(prev => ({ ...prev, g: gVal }))
+    }
+  }
+
+  const onMacroChange = (key, val) => {
+    const numVal = Math.max(0, Number(val) || 0)
+    setE(prev => {
+      const next = { ...prev, [key]: numVal }
+      const g = Number(next.g) || 0
+      if (g > 0) {
+        const factor = 100 / g
+        setPer100(prevP100 => ({
+          ...(prevP100 || { kcal: 0, p: 0, c: 0, f: 0 }),
+          [key]: key === 'kcal' ? Math.round(numVal * factor) : Math.round(numVal * factor * 10) / 10,
+        }))
+      }
+      return next
+    })
+  }
+
   return <>
     <h3>{t('Estimated')}{model ? <span className="dim" style={{ fontSize: 12, marginLeft: 8 }}>{model}</span> : null}</h3>
     <div className="muted small" style={{ marginBottom: 12 }}>{t('Check the numbers — you can correct anything before saving.')}</div>
-    <TextField placeholder={t('Name')} value={e.name} onChange={ev => set({ name: ev.target.value })} />
+    <TextField placeholder={t('Name')} value={e.name || ''} onChange={ev => setE(prev => ({ ...prev, name: ev.target.value }))} />
     <div className="f-editgrid" style={{ marginTop: 10 }}>
-      <Fld label={t('Weight (g)')} value={e.g} onChange={v => set({ g: v })} />
-      <Fld label={t('Calories (kcal)')} value={e.kcal} onChange={v => set({ kcal: v })} />
-      <Fld label={t('Protein (g)')} value={e.p} onChange={v => set({ p: v })} />
-      <Fld label={t('Carbs (g)')} value={e.c} onChange={v => set({ c: v })} />
-      <Fld label={t('Fat (g)')} value={e.f} onChange={v => set({ f: v })} />
+      <Fld label={t('Weight (g)')} value={e.g} onChange={onGramsChange} />
+      <Fld label={t('Calories (kcal)')} value={e.kcal} onChange={v => onMacroChange('kcal', v)} />
+      <Fld label={t('Protein (g)')} value={e.p} onChange={v => onMacroChange('p', v)} />
+      <Fld label={t('Carbs (g)')} value={e.c} onChange={v => onMacroChange('c', v)} />
+      <Fld label={t('Fat (g)')} value={e.f} onChange={v => onMacroChange('f', v)} />
     </div>
     <div style={{ height: 14 }} />
-    <Button variant="primary" onClick={() => { close(); resolve(e) }}>{t('Add')}</Button>
+    <Button variant="primary" onClick={() => { close(); resolve({ ...e, per100: per100 || e.per100 }) }}>{t('Add')}</Button>
     <div style={{ height: 8 }} /><Button variant="ghost" className="dim" onClick={() => { close(); resolve(null) }}>{t('Cancel')}</Button>
   </>
 }
@@ -138,10 +208,72 @@ function EditFavoriteSheet({ fav, close }) {
   const [c, setC] = useState(fav.c || 0)
   const [f, setF] = useState(fav.f || 0)
 
+  const [per100, setPer100] = useState(() => {
+    if (fav.per100 && (fav.per100.kcal > 0 || fav.per100.p > 0 || fav.per100.c > 0 || fav.per100.f > 0)) {
+      return {
+        kcal: Number(fav.per100.kcal) || 0,
+        p: Number(fav.per100.p) || 0,
+        c: Number(fav.per100.c) || 0,
+        f: Number(fav.per100.f) || 0,
+      }
+    }
+    const favG = Number(fav.g) || 0
+    if (favG > 0) {
+      const factor = 100 / favG
+      return {
+        kcal: Math.round((Number(fav.kcal) || 0) * factor),
+        p: Math.round((Number(fav.p) || 0) * factor * 10) / 10,
+        c: Math.round((Number(fav.c) || 0) * factor * 10) / 10,
+        f: Math.round((Number(fav.f) || 0) * factor * 10) / 10,
+      }
+    }
+    return null
+  })
+
+  const onGramsChange = newG => {
+    const gVal = typeof newG === 'number' ? newG : parseFloat(newG) || 0
+    setG(gVal)
+    if (gVal > 0 && per100) {
+      const r = gVal / 100
+      setKcal(Math.round(per100.kcal * r))
+      setP(Math.round(per100.p * r * 10) / 10)
+      setC(Math.round(per100.c * r * 10) / 10)
+      setF(Math.round(per100.f * r * 10) / 10)
+    } else if (gVal > 0 && !per100 && (kcal > 0 || p > 0 || c > 0 || f > 0)) {
+      const factor = 100 / gVal
+      const derived = {
+        kcal: Math.round((Number(kcal) || 0) * factor),
+        p: Math.round((Number(p) || 0) * factor * 10) / 10,
+        c: Math.round((Number(c) || 0) * factor * 10) / 10,
+        f: Math.round((Number(f) || 0) * factor * 10) / 10,
+      }
+      setPer100(derived)
+    }
+  }
+
+  const onMacroChange = (setter, key, val) => {
+    const numVal = Math.max(0, Number(val) || 0)
+    setter(numVal)
+    const currentG = Number(g) || 0
+    if (currentG > 0) {
+      const factor = 100 / currentG
+      setPer100(prev => ({
+        ...(prev || { kcal: 0, p: 0, c: 0, f: 0 }),
+        [key]: key === 'kcal' ? Math.round(numVal * factor) : Math.round(numVal * factor * 10) / 10,
+      }))
+    }
+  }
+
   const save = () => {
     if (!name.trim()) { toast(t('Give it a name')); return }
     useFood.getState().update(food => updateFavorite(food, fav.id, {
-      name: name.trim(), g: Math.round(g), kcal: Math.round(kcal), p: Math.round(p), c: Math.round(c), f: Math.round(f)
+      name: name.trim(),
+      g: Math.round(g),
+      kcal: Math.round(kcal),
+      p: Math.round(p * 10) / 10,
+      c: Math.round(c * 10) / 10,
+      f: Math.round(f * 10) / 10,
+      per100: per100 || fav.per100,
     }))
     close()
     toast(t('Saved'))
@@ -151,11 +283,11 @@ function EditFavoriteSheet({ fav, close }) {
     <h3>{t('Edit favorite')}</h3>
     <TextField placeholder={t('Name')} value={name} onChange={e => setName(e.target.value)} />
     <div className="f-editgrid" style={{ marginTop: 12 }}>
-      <Fld label={t('Weight (g)')} value={g} onChange={setG} />
-      <Fld label={t('Calories (kcal)')} value={kcal} onChange={setKcal} />
-      <Fld label={t('Protein (g)')} value={p} onChange={setP} />
-      <Fld label={t('Carbs (g)')} value={c} onChange={setC} />
-      <Fld label={t('Fat (g)')} value={f} onChange={setF} />
+      <Fld label={t('Weight (g)')} value={g} onChange={onGramsChange} />
+      <Fld label={t('Calories (kcal)')} value={kcal} onChange={v => onMacroChange(setKcal, 'kcal', v)} />
+      <Fld label={t('Protein (g)')} value={p} onChange={v => onMacroChange(setP, 'p', v)} />
+      <Fld label={t('Carbs (g)')} value={c} onChange={v => onMacroChange(setC, 'c', v)} />
+      <Fld label={t('Fat (g)')} value={f} onChange={v => onMacroChange(setF, 'f', v)} />
     </div>
     <div style={{ height: 14 }} />
     <Button variant="primary" onClick={save}>{t('Save')}</Button>
@@ -171,12 +303,53 @@ function NewFavoriteSheet({ close }) {
   const [p, setP] = useState(0)
   const [c, setC] = useState(0)
   const [f, setF] = useState(0)
+  const [per100, setPer100] = useState(null)
+
+  const onGramsChange = newG => {
+    const gVal = typeof newG === 'number' ? newG : parseFloat(newG) || 0
+    setG(gVal)
+    if (gVal > 0 && per100) {
+      const r = gVal / 100
+      setKcal(Math.round(per100.kcal * r))
+      setP(Math.round(per100.p * r * 10) / 10)
+      setC(Math.round(per100.c * r * 10) / 10)
+      setF(Math.round(per100.f * r * 10) / 10)
+    } else if (gVal > 0 && !per100 && (kcal > 0 || p > 0 || c > 0 || f > 0)) {
+      const factor = 100 / gVal
+      setPer100({
+        kcal: Math.round((Number(kcal) || 0) * factor),
+        p: Math.round((Number(p) || 0) * factor * 10) / 10,
+        c: Math.round((Number(c) || 0) * factor * 10) / 10,
+        f: Math.round((Number(f) || 0) * factor * 10) / 10,
+      })
+    }
+  }
+
+  const onMacroChange = (setter, key, val) => {
+    const numVal = Math.max(0, Number(val) || 0)
+    setter(numVal)
+    const currentG = Number(g) || 0
+    if (currentG > 0) {
+      const factor = 100 / currentG
+      setPer100(prev => ({
+        ...(prev || { kcal: 0, p: 0, c: 0, f: 0 }),
+        [key]: key === 'kcal' ? Math.round(numVal * factor) : Math.round(numVal * factor * 10) / 10,
+      }))
+    }
+  }
 
   const save = () => {
     if (!name.trim()) { toast(t('Give it a name')); return }
     if (!kcal && !p && !c && !f) { toast(t('Fill in calories or at least one macro')); return }
     useFood.getState().update(food => addFavorite(food, {
-      name: name.trim(), g: Math.round(g), kcal: Math.round(kcal), p: Math.round(p), c: Math.round(c), f: Math.round(f), source: 'manual'
+      name: name.trim(),
+      g: Math.round(g),
+      kcal: Math.round(kcal),
+      p: Math.round(p * 10) / 10,
+      c: Math.round(c * 10) / 10,
+      f: Math.round(f * 10) / 10,
+      per100,
+      source: 'manual',
     }))
     close()
     toast(t('Added to favorites'))
@@ -186,11 +359,11 @@ function NewFavoriteSheet({ close }) {
     <h3>{t('New favorite')}</h3>
     <TextField placeholder={t('Name — e.g. Chicken & rice bowl')} value={name} maxLength={120} onChange={e => setName(e.target.value)} />
     <div className="f-editgrid" style={{ marginTop: 12 }}>
-      <Fld label={t('Weight (g)')} value={g} onChange={setG} />
-      <Fld label={t('Calories (kcal)')} value={kcal} onChange={setKcal} />
-      <Fld label={t('Protein (g)')} value={p} onChange={setP} />
-      <Fld label={t('Carbs (g)')} value={c} onChange={setC} />
-      <Fld label={t('Fat (g)')} value={f} onChange={setF} />
+      <Fld label={t('Weight (g)')} value={g} onChange={onGramsChange} />
+      <Fld label={t('Calories (kcal)')} value={kcal} onChange={v => onMacroChange(setKcal, 'kcal', v)} />
+      <Fld label={t('Protein (g)')} value={p} onChange={v => onMacroChange(setP, 'p', v)} />
+      <Fld label={t('Carbs (g)')} value={c} onChange={v => onMacroChange(setC, 'c', v)} />
+      <Fld label={t('Fat (g)')} value={f} onChange={v => onMacroChange(setF, 'f', v)} />
     </div>
     <div style={{ height: 14 }} />
     <Button variant="primary" onClick={save}>{t('Add to favorites')}</Button>
@@ -542,22 +715,65 @@ function ManualMode({ toast, onSave, onBack }) {
   const [p, setP] = useState(0)
   const [c, setC] = useState(0)
   const [f, setF] = useState(0)
+  const [per100, setPer100] = useState(null)
+
+  const onGramsChange = newG => {
+    const gVal = typeof newG === 'number' ? newG : parseFloat(newG) || 0
+    setG(gVal)
+    if (gVal > 0 && per100) {
+      const r = gVal / 100
+      setKcal(Math.round(per100.kcal * r))
+      setP(Math.round(per100.p * r * 10) / 10)
+      setC(Math.round(per100.c * r * 10) / 10)
+      setF(Math.round(per100.f * r * 10) / 10)
+    } else if (gVal > 0 && !per100 && (kcal > 0 || p > 0 || c > 0 || f > 0)) {
+      const factor = 100 / gVal
+      setPer100({
+        kcal: Math.round((Number(kcal) || 0) * factor),
+        p: Math.round((Number(p) || 0) * factor * 10) / 10,
+        c: Math.round((Number(c) || 0) * factor * 10) / 10,
+        f: Math.round((Number(f) || 0) * factor * 10) / 10,
+      })
+    }
+  }
+
+  const onMacroChange = (setter, key, val) => {
+    const numVal = Math.max(0, Number(val) || 0)
+    setter(numVal)
+    const currentG = Number(g) || 0
+    if (currentG > 0) {
+      const factor = 100 / currentG
+      setPer100(prev => ({
+        ...(prev || { kcal: 0, p: 0, c: 0, f: 0 }),
+        [key]: key === 'kcal' ? Math.round(numVal * factor) : Math.round(numVal * factor * 10) / 10,
+      }))
+    }
+  }
 
   const save = () => {
     if (!name.trim()) { toast(t('Give it a name')); return }
     if (!kcal && !p && !c && !f) { toast(t('Fill in calories or at least one macro')); return }
-    onSave({ name: name.trim(), g: Math.round(g), kcal: Math.round(kcal), p: Math.round(p), c: Math.round(c), f: Math.round(f), source: 'manual' })
+    onSave({
+      name: name.trim(),
+      g: Math.round(g),
+      kcal: Math.round(kcal),
+      p: Math.round(p * 10) / 10,
+      c: Math.round(c * 10) / 10,
+      f: Math.round(f * 10) / 10,
+      per100,
+      source: 'manual',
+    })
   }
 
   return <>
     <div className="card">
       <TextField placeholder={t('Name — e.g. Chicken & rice bowl')} value={name} maxLength={120} onChange={e => setName(e.target.value)} />
       <div className="f-editgrid" style={{ marginTop: 12 }}>
-        <Fld label={t('Weight (g)')} value={g} onChange={setG} />
-        <Fld label={t('Calories (kcal)')} value={kcal} onChange={setKcal} />
-        <Fld label={t('Protein (g)')} value={p} onChange={setP} />
-        <Fld label={t('Carbs (g)')} value={c} onChange={setC} />
-        <Fld label={t('Fat (g)')} value={f} onChange={setF} />
+        <Fld label={t('Weight (g)')} value={g} onChange={onGramsChange} />
+        <Fld label={t('Calories (kcal)')} value={kcal} onChange={v => onMacroChange(setKcal, 'kcal', v)} />
+        <Fld label={t('Protein (g)')} value={p} onChange={v => onMacroChange(setP, 'p', v)} />
+        <Fld label={t('Carbs (g)')} value={c} onChange={v => onMacroChange(setC, 'c', v)} />
+        <Fld label={t('Fat (g)')} value={f} onChange={v => onMacroChange(setF, 'f', v)} />
       </div>
       <div style={{ height: 14 }} />
       <Button variant="primary" onClick={save}>{t('Add to diary')}</Button>

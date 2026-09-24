@@ -110,7 +110,17 @@ export function clampEntry(entry) {
 
 export function addEntry(food, iso, entry) {
   const day = (food.day[iso] = food.day[iso] || [])
-  day.push({ id: uid(), t: Date.now(), ...clampEntry(entry) })
+  const clamped = clampEntry(entry)
+  if (!clamped.per100 && clamped.g > 0 && (clamped.kcal > 0 || clamped.p > 0 || clamped.c > 0 || clamped.f > 0)) {
+    const factor = 100 / clamped.g
+    clamped.per100 = {
+      kcal: Math.round(clamped.kcal * factor),
+      p: Math.round(clamped.p * factor * 10) / 10,
+      c: Math.round(clamped.c * factor * 10) / 10,
+      f: Math.round(clamped.f * factor * 10) / 10
+    }
+  }
+  day.push({ id: uid(), t: Date.now(), ...clamped })
   if (day.length > ENTRY_MAX) day.shift()
 }
 
@@ -124,13 +134,32 @@ export function updateEntry(food, iso, id, patch) {
   if (!day) return
   const i = day.findIndex(e => e.id === id)
   if (i === -1) return
-  const next = clampEntry({ ...day[i], ...patch })
-  if (next.per100 && next.g > 0) {
-    const r = next.g / 100
-    next.kcal = Math.round(next.per100.kcal * r)
-    next.p = Math.round(next.per100.p * r)
-    next.c = Math.round(next.per100.c * r)
-    next.f = Math.round(next.per100.f * r)
+  const prev = day[i]
+  const next = clampEntry({ ...prev, ...patch })
+  const macrosExplicitlyPatched = patch.kcal != null || patch.p != null || patch.c != null || patch.f != null
+  if (patch.g != null && !macrosExplicitlyPatched) {
+    const p100 = next.per100 || (prev.g > 0 ? {
+      kcal: Math.round((prev.kcal / prev.g) * 100),
+      p: Math.round((prev.p / prev.g) * 1000) / 10,
+      c: Math.round((prev.c / prev.g) * 1000) / 10,
+      f: Math.round((prev.f / prev.g) * 1000) / 10,
+    } : null)
+    if (p100 && next.g > 0) {
+      const r = next.g / 100
+      next.kcal = Math.round(p100.kcal * r)
+      next.p = Math.round(p100.p * r)
+      next.c = Math.round(p100.c * r)
+      next.f = Math.round(p100.f * r)
+      next.per100 = p100
+    }
+  } else if (next.g > 0 && (!next.per100 || macrosExplicitlyPatched)) {
+    const factor = 100 / next.g
+    next.per100 = {
+      kcal: Math.round(next.kcal * factor),
+      p: Math.round(next.p * factor * 10) / 10,
+      c: Math.round(next.c * factor * 10) / 10,
+      f: Math.round(next.f * factor * 10) / 10,
+    }
   }
   day[i] = next
 }
@@ -176,12 +205,30 @@ export function updateFavorite(food, id, patch) {
   if (i === -1) return
   const prev = food.favorites[i]
   const next = clampEntry({ ...prev, ...patch })
-  if (next.per100 && next.g > 0) {
-    const r = next.g / 100
-    next.kcal = Math.round(next.per100.kcal * r)
-    next.p = Math.round(next.per100.p * r)
-    next.c = Math.round(next.per100.c * r)
-    next.f = Math.round(next.per100.f * r)
+  const macrosExplicitlyPatched = patch.kcal != null || patch.p != null || patch.c != null || patch.f != null
+  if (patch.g != null && !macrosExplicitlyPatched) {
+    const p100 = next.per100 || (prev.g > 0 ? {
+      kcal: Math.round((prev.kcal / prev.g) * 100),
+      p: Math.round((prev.p / prev.g) * 1000) / 10,
+      c: Math.round((prev.c / prev.g) * 1000) / 10,
+      f: Math.round((prev.f / prev.g) * 1000) / 10,
+    } : null)
+    if (p100 && next.g > 0) {
+      const r = next.g / 100
+      next.kcal = Math.round(p100.kcal * r)
+      next.p = Math.round(p100.p * r)
+      next.c = Math.round(p100.c * r)
+      next.f = Math.round(p100.f * r)
+      next.per100 = p100
+    }
+  } else if (next.g > 0 && (!next.per100 || macrosExplicitlyPatched)) {
+    const factor = 100 / next.g
+    next.per100 = {
+      kcal: Math.round(next.kcal * factor),
+      p: Math.round(next.p * factor * 10) / 10,
+      c: Math.round(next.c * factor * 10) / 10,
+      f: Math.round(next.f * factor * 10) / 10,
+    }
   }
   food.favorites[i] = {
     ...prev,
@@ -244,8 +291,11 @@ export function parseEstimate(raw, gramsHint = 0) {
 
   const name = grab([obj.nazwa, obj.name, obj.food_name, obj.food])
   if (!name) throw new Error('name missing')
+  const userG = num(gramsHint, 99999)
+  const modelG = num(grab([obj.g, obj.grams, obj.weight_g, obj.waga]), 99999)
+  const g = userG > 0 ? userG : modelG
 
-  const per100 = obj.per100 && typeof obj.per100 === 'object'
+  let per100 = obj.per100 && typeof obj.per100 === 'object'
     ? {
         kcal: num(grab([obj.per100.kcal, obj.per100.kalorie, obj.per100.energy]), 999),
         p: num(obj.per100.bialko ?? obj.per100.protein ?? obj.per100.p, 100),
@@ -254,16 +304,46 @@ export function parseEstimate(raw, gramsHint = 0) {
       }
     : null
 
-  const g = num(grab([obj.g, obj.grams, obj.weight_g, obj.waga]), 99999) || num(gramsHint, 99999)
+  const rawKcal = grab([obj.kcal, obj.kalorie, obj.energy])
+  const rawP = grab([obj.p, obj.bialko, obj.protein])
+  const rawC = grab([obj.c, obj.weglowodany, obj.carbs])
+  const rawF = grab([obj.f, obj.tluszcze, obj.fat])
 
-  const derive = (totals, per) =>
-    totals != null ? num(totals, 99999) : (per100 && g > 0 ? Math.round(per100[per] * g / 100) : 0)
+  if (!per100 && modelG > 0 && (rawKcal != null || rawP != null || rawC != null || rawF != null)) {
+    const factor = 100 / modelG
+    per100 = {
+      kcal: num(rawKcal != null ? num(rawKcal, 99999) * factor : 0, 999),
+      p: num(rawP != null ? num(rawP, 99999) * factor : 0, 100),
+      c: num(rawC != null ? num(rawC, 99999) * factor : 0, 100),
+      f: num(rawF != null ? num(rawF, 99999) * factor : 0, 100)
+    }
+  }
 
-  const tot = {
-    kcal: derive(grab([obj.kcal, obj.kalorie, obj.energy]), 'kcal'),
-    p: derive(grab([obj.p, obj.bialko, obj.protein]), 'p'),
-    c: derive(grab([obj.c, obj.weglowodany, obj.carbs]), 'c'),
-    f: derive(grab([obj.f, obj.tluszcze, obj.fat]), 'f')
+  let tot = { kcal: 0, p: 0, c: 0, f: 0 }
+  if (per100 && g > 0) {
+    const r = g / 100
+    tot = {
+      kcal: Math.round(per100.kcal * r),
+      p: Math.round(per100.p * r * 10) / 10,
+      c: Math.round(per100.c * r * 10) / 10,
+      f: Math.round(per100.f * r * 10) / 10
+    }
+  } else {
+    tot = {
+      kcal: rawKcal != null ? num(rawKcal, 99999) : 0,
+      p: rawP != null ? num(rawP, 99999) : 0,
+      c: rawC != null ? num(rawC, 99999) : 0,
+      f: rawF != null ? num(rawF, 99999) : 0
+    }
+    if (!per100 && g > 0 && (tot.kcal > 0 || tot.p > 0 || tot.c > 0 || tot.f > 0)) {
+      const factor = 100 / g
+      per100 = {
+        kcal: Math.round(tot.kcal * factor),
+        p: Math.round(tot.p * factor * 10) / 10,
+        c: Math.round(tot.c * factor * 10) / 10,
+        f: Math.round(tot.f * factor * 10) / 10
+      }
+    }
   }
 
   if (g > 0) {
@@ -272,6 +352,15 @@ export function parseEstimate(raw, gramsHint = 0) {
       tot.p = Math.round(tot.p * (tot.kcal / implied))
       tot.c = Math.round(tot.c * (tot.kcal / implied))
       tot.f = Math.round(tot.f * (tot.kcal / implied))
+      if (per100) {
+        const factor = 100 / g
+        per100 = {
+          kcal: Math.round(tot.kcal * factor),
+          p: Math.round(tot.p * factor * 10) / 10,
+          c: Math.round(tot.c * factor * 10) / 10,
+          f: Math.round(tot.f * factor * 10) / 10
+        }
+      }
     }
   }
 

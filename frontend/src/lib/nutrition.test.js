@@ -208,4 +208,39 @@ describe('favorites', () => {
     touchFavorite(f, fav.id)
     expect(favoritesOf(f)[0].lastUsedAt).toBeGreaterThan(1000)
   })
+
+  it('derives per100 in parseEstimate when model only gave portion macros', () => {
+    const e = parseEstimate('{"name":"Steak","g":200,"kcal":500,"p":50,"c":0,"f":30}')
+    expect(e.g).toBe(200)
+    expect(e.kcal).toBe(500)
+    expect(e.per100).toEqual({ kcal: 250, p: 25, c: 0, f: 15 })
+  })
+
+  it('scales totals in parseEstimate when user specifies gramsHint', () => {
+    const e = parseEstimate('{"name":"Rice","g":100,"kcal":130,"p":2.5,"c":28,"f":0.3}', 250)
+    expect(e.g).toBe(250)
+    expect(e.kcal).toBe(325)
+    expect(e.p).toBe(6.3)
+    expect(e.c).toBe(70)
+  })
+
+  it('addEntry automatically attaches per100 if missing', () => {
+    const f = emptyFood()
+    addEntry(f, '2026-01-01', { name: 'Chicken', g: 200, kcal: 330, p: 62, c: 0, f: 7, source: 'manual' })
+    const e = f.day['2026-01-01'][0]
+    expect(e.per100).toEqual({ kcal: 165, p: 31, c: 0, f: 3.5 })
+  })
+
+  it('updateEntry allows updating macros explicitly without being overwritten by old per100', () => {
+    const f = emptyFood()
+    addEntry(f, '2026-01-01', { name: 'Eggs', g: 100, kcal: 150, p: 13, c: 1, f: 10, source: 'manual' })
+    const id = f.day['2026-01-01'][0].id
+    updateEntry(f, '2026-01-01', id, { kcal: 180, f: 13 })
+    const e = f.day['2026-01-01'][0]
+    expect(e.kcal).toBe(180)
+    expect(e.f).toBe(13)
+    expect(e.per100.kcal).toBe(180)
+    expect(e.per100.f).toBe(13)
+  })
 })
+
