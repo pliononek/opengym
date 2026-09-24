@@ -24,3 +24,7 @@ create policy "state_insert_own" on public.state
 create policy "state_update_own" on public.state
   for update to authenticated
   using (user_id = auth.uid());
+
+-- Data API permissions (explicit GRANTs required by Supabase from Oct 30)
+grant select, insert, update, delete on public.state to authenticated;
+grant select, insert, update, delete on public.state to service_role;
